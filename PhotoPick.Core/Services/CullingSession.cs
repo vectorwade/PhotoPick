@@ -16,7 +16,12 @@ public enum PhotoFilterMode
     PickedOnly,
     UnflaggedOnly,
     RatedOnly,
-    RejectedOnly
+    RejectedOnly,
+    Rating5,
+    Rating4,
+    Rating3,
+    Rating2,
+    Rating1
 }
 
 public class CullingSession
@@ -135,6 +140,8 @@ public class CullingSession
         return _allPhotos.Count;
     }
 
+    public int RatingCount(int stars) => _allPhotos.Count(p => p.Rating == stars);
+
     public void ApplyFilter(PhotoFilterMode mode)
     {
         CurrentFilter = mode;
@@ -146,6 +153,11 @@ public class CullingSession
             PhotoFilterMode.RejectedOnly => _allPhotos.Where(p => p.IsRejected),
             PhotoFilterMode.UnflaggedOnly => _allPhotos.Where(p => !p.IsPicked && !p.IsRejected && p.Rating == 0),
             PhotoFilterMode.RatedOnly => _allPhotos.Where(p => p.Rating > 0),
+            PhotoFilterMode.Rating5 => _allPhotos.Where(p => p.Rating == 5),
+            PhotoFilterMode.Rating4 => _allPhotos.Where(p => p.Rating == 4),
+            PhotoFilterMode.Rating3 => _allPhotos.Where(p => p.Rating == 3),
+            PhotoFilterMode.Rating2 => _allPhotos.Where(p => p.Rating == 2),
+            PhotoFilterMode.Rating1 => _allPhotos.Where(p => p.Rating == 1),
             _ => _allPhotos.AsEnumerable()
         };
 
@@ -155,6 +167,44 @@ public class CullingSession
         }
 
         StatsChanged?.Invoke();
+    }
+
+    public async Task<int> ExportSelectedPhotosAsync(string destinationFolder, IProgress<(int current, int total)>? progress = null, CancellationToken ct = default)
+    {
+        var selected = _allPhotos.Where(p => p.IsPicked).ToList();
+        if (selected.Count == 0) return 0;
+
+        Directory.CreateDirectory(destinationFolder);
+
+        // Primeiro, garante que os XMPs mais recentes foram gravados no disco de origem
+        await SaveAllXmpAsync(ct);
+
+        int copied = 0;
+        int total = selected.Count;
+
+        await Task.Run(() =>
+        {
+            foreach (var photo in selected)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string destPhoto = Path.Combine(destinationFolder, photo.FileName);
+                File.Copy(photo.FilePath, destPhoto, overwrite: true);
+
+                // Copia o sidecar XMP correspondente se existir
+                string xmpSource = photo.XmpPath;
+                if (File.Exists(xmpSource))
+                {
+                    string destXmp = Path.Combine(destinationFolder, Path.GetFileName(xmpSource));
+                    File.Copy(xmpSource, destXmp, overwrite: true);
+                }
+
+                copied++;
+                progress?.Report((copied, total));
+            }
+        }, ct);
+
+        return copied;
     }
 
     public void SetRating(PhotoItem item, int rating)
@@ -250,8 +300,8 @@ public class CullingSession
         var missing = _allPhotos.Where(p => string.IsNullOrEmpty(p.ThumbnailCachePath) || !File.Exists(p.ThumbnailCachePath)).ToList();
         if (missing.Count == 0) return;
 
-        // Limita a concorrência para não saturar I/O do disco
-        using var semaphore = new SemaphoreSlim(Math.Max(2, Environment.ProcessorCount / 2));
+        // Limita a concorrência a 2 workers simultâneos para não travar cartões SD e pendrives USB
+        using var semaphore = new SemaphoreSlim(2);
         var tasks = missing.Select(async photo =>
         {
             await semaphore.WaitAsync(ct);

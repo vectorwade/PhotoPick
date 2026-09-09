@@ -6,10 +6,10 @@
         xmlns:vm="clr-namespace:PhotoPick.Desktop.ViewModels"
         mc:Ignorable="d"
         Title="PhotoPick — Culling Ultrarrápido de Fotos (Lightroom Classic)"
-        Height="820" Width="1280"
-        MinHeight="600" MinWidth="900"
+        Height="860" Width="1340"
+        MinHeight="600" MinWidth="950"
         WindowStartupLocation="CenterScreen"
-        Background="#181818"
+        Background="#141414"
         Foreground="#ECECEC"
         AllowDrop="True"
         Drop="Window_Drop"
@@ -25,12 +25,12 @@
 
         <!-- Estilos de Botão Escuro Moderno -->
         <Style x:Key="ToolbarBtn" TargetType="Button">
-            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Background" Value="#252525"/>
             <Setter Property="Foreground" Value="#F0F0F0"/>
-            <Setter Property="BorderBrush" Value="#3D3D3D"/>
+            <Setter Property="BorderBrush" Value="#383838"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="3,0"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -48,47 +48,130 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#383838"/>
+                    <Setter Property="Background" Value="#353535"/>
                     <Setter Property="BorderBrush" Value="#555555"/>
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#222222"/>
+                    <Setter Property="Background" Value="#1A1A1A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Botão de Ação Primária (Verde / Salvar) -->
-        <Style x:Key="PrimaryBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
-            <Setter Property="Background" Value="#107C41"/>
-            <Setter Property="BorderBrush" Value="#1E8E4F"/>
+        <!-- Botão Primário Verde (Lightroom) -->
+        <Style x:Key="LightroomBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
+            <Setter Property="Background" Value="#0F7A3E"/>
+            <Setter Property="BorderBrush" Value="#1DB954"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#15934E"/>
+                    <Setter Property="Background" Value="#149A4F"/>
                     <Setter Property="BorderBrush" Value="#2ECC71"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
+        <!-- Botão Exportar / Criar Pasta (Azul) -->
+        <Style x:Key="ExportBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
+            <Setter Property="Background" Value="#1B5E8C"/>
+            <Setter Property="BorderBrush" Value="#2980B9"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2471A3"/>
+                    <Setter Property="BorderBrush" Value="#3498DB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Chips de Filtro -->
-        <Style x:Key="FilterBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
-            <Setter Property="Background" Value="#222222"/>
-            <Setter Property="BorderBrush" Value="#333333"/>
+        <Style x:Key="FilterChipBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="BorderBrush" Value="#2F2F2F"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="Margin" Value="2,0"/>
+        </Style>
+
+        <!-- Mini Botões de Card (Pick / Reject / Limpar) -->
+        <Style x:Key="CardActionBtn" TargetType="Button">
+            <Setter Property="Background" Value="#282828"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#444444"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CardPickBtn" TargetType="Button" BasedOn="{StaticResource CardActionBtn}">
+            <Setter Property="Background" Value="#1B4D2E"/>
+            <Setter Property="BorderBrush" Value="#2ECC71"/>
+            <Setter Property="Foreground" Value="#2ECC71"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2ECC71"/>
+                    <Setter Property="Foreground" Value="#000000"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CardRejectBtn" TargetType="Button" BasedOn="{StaticResource CardActionBtn}">
+            <Setter Property="Background" Value="#4D1F1F"/>
+            <Setter Property="BorderBrush" Value="#E74C3C"/>
+            <Setter Property="Foreground" Value="#E74C3C"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E74C3C"/>
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Botão Estrela Individual -->
+        <Style x:Key="StarBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="1,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Barra Superior -->
-            <RowDefinition Height="Auto"/> <!-- Barra de Filtros -->
-            <RowDefinition Height="*"/>    <!-- Conteúdo: Grade ou Loupe -->
-            <RowDefinition Height="Auto"/> <!-- Barra de Status -->
+            <RowDefinition Height="Auto"/> <!-- Top Bar 1: Controles Principais -->
+            <RowDefinition Height="Auto"/> <!-- Top Bar 2: Filtros & Notas -->
+            <RowDefinition Height="*"/>    <!-- Content: Grade Virtualizada ou Foto Única -->
+            <RowDefinition Height="Auto"/> <!-- Status Bar -->
         </Grid.RowDefinitions>
 
-        <!-- BARRA SUPERIOR -->
-        <Border Grid.Row="0" Background="#1E1E1E" BorderBrush="#2C2C2C" BorderThickness="0,0,0,1" Padding="14,10">
+        <!-- BARRA SUPERIOR 1: ABERTURA, EXPORTAÇÃO E LIGHTROOM -->
+        <Border Grid.Row="0" Background="#1C1C1C" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="12,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -96,67 +179,105 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Título e Logo -->
+                <!-- Logo e Botões de Abrir -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#3498DB" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
+                    <Border Background="#3498DB" CornerRadius="4" Padding="6,3" Margin="0,0,10,0">
                         <TextBlock Text="PHOTOPICK" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF"/>
                     </Border>
-                    <Button Content="📁 Abrir Pasta..." Style="{StaticResource ToolbarBtn}" Click="BtnOpenFolder_Click"/>
+                    <Button Content="📁 Abrir Pasta..." Style="{StaticResource ToolbarBtn}" Click="BtnOpenFolder_Click"
+                            ToolTip="Abre seletor de diretório"/>
+                    <Button Content="🖼️ Abrir Fotos..." Style="{StaticResource ToolbarBtn}" Click="BtnOpenPhotos_Click"
+                            ToolTip="Abre fotos visíveis para carregar a pasta"/>
                 </StackPanel>
 
                 <!-- Caminho da Pasta Atual -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                    <TextBlock Text="Pasta: " Foreground="#888888" FontSize="12"/>
-                    <TextBlock Text="{Binding CurrentDirectory}" Foreground="#DDDDDD" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="500"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0">
+                    <TextBlock Text="Pasta: " Foreground="#777777" FontSize="11"/>
+                    <TextBlock Text="{Binding CurrentDirectory}" Foreground="#E0E0E0" FontSize="11" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" MaxWidth="380"/>
                 </StackPanel>
 
-                <!-- Botões de Ação Direita -->
+                <!-- Ações: Alternar Modo, Criar Pasta Selecionadas, Sincronizar Lightroom -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="🔍 Alternar Visão (Espaço)" Style="{StaticResource ToolbarBtn}" Click="BtnToggleView_Click"/>
-                    <Button Content="⚡ Sincronizar Lightroom (Ctrl+S)" Style="{StaticResource PrimaryBtn}" Click="BtnSaveXmp_Click"/>
+                    <Button Content="📦 Criar Pasta c/ Selecionadas..." Style="{StaticResource ExportBtn}" Click="BtnExportSelected_Click"
+                            ToolTip="Copia todas as fotos marcadas como Pick e seus .xmp para uma nova pasta"/>
+                    <Button Content="⚡ Sincronizar &amp; Abrir no Lightroom" Style="{StaticResource LightroomBtn}" Click="BtnSyncLightroom_Click"
+                            ToolTip="Grava os arquivos .xmp e inicia o Adobe Lightroom Classic automaticamente"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- BARRA DE FILTROS & CONTADORES -->
-        <Border Grid.Row="1" Background="#141414" BorderBrush="#222222" BorderThickness="0,0,0,1" Padding="14,6">
+        <!-- BARRA DE FILTROS & AGRUPAMENTO POR NOTAS -->
+        <Border Grid.Row="1" Background="#151515" BorderBrush="#222222" BorderThickness="0,0,0,1" Padding="12,5">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Filtro:" Foreground="#777777" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Filtros:" Foreground="#777777" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
 
-                    <Button Style="{StaticResource FilterBtn}" Click="FilterAll_Click">
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterAll_Click">
                         <TextBlock>
                             <Run Text="Todas ("/><Run Text="{Binding TotalCount, Mode=OneWay}"/><Run Text=")"/>
                         </TextBlock>
                     </Button>
 
-                    <Button Style="{StaticResource FilterBtn}" Click="FilterPicked_Click">
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterPicked_Click">
                         <TextBlock Foreground="#2ECC71">
-                            <Run Text="✔ Picks ("/><Run Text="{Binding PickedCount, Mode=OneWay}"/><Run Text=")"/>
+                            <Run Text="✔ Selecionadas ("/><Run Text="{Binding PickedCount, Mode=OneWay}"/><Run Text=")"/>
                         </TextBlock>
                     </Button>
 
-                    <Button Style="{StaticResource FilterBtn}" Click="FilterUnflagged_Click">
-                        <TextBlock Foreground="#CCCCCC">
-                            <Run Text="○ Não Avaliadas ("/><Run Text="{Binding UnflaggedCount, Mode=OneWay}"/><Run Text=")"/>
-                        </TextBlock>
-                    </Button>
-
-                    <Button Style="{StaticResource FilterBtn}" Click="FilterRejected_Click">
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRejected_Click">
                         <TextBlock Foreground="#E74C3C">
                             <Run Text="✖ Rejeitadas ("/><Run Text="{Binding RejectedCount, Mode=OneWay}"/><Run Text=")"/>
                         </TextBlock>
                     </Button>
 
-                    <Button Style="{StaticResource FilterBtn}" Click="FilterRated_Click">
-                        <TextBlock Foreground="#F39C12" Text="★ Com Estrelas"/>
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterUnflagged_Click">
+                        <TextBlock Foreground="#AAAAAA">
+                            <Run Text="○ Não Avaliadas ("/><Run Text="{Binding UnflaggedCount, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
+
+                    <!-- Divisor -->
+                    <Border Width="1" Height="14" Background="#333333" Margin="8,0"/>
+
+                    <TextBlock Text="Notas:" Foreground="#777777" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRating5_Click">
+                        <TextBlock Foreground="#F39C12">
+                            <Run Text="★ 5 ("/><Run Text="{Binding Star5Count, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRating4_Click">
+                        <TextBlock Foreground="#F39C12">
+                            <Run Text="★ 4 ("/><Run Text="{Binding Star4Count, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRating3_Click">
+                        <TextBlock Foreground="#F39C12">
+                            <Run Text="★ 3 ("/><Run Text="{Binding Star3Count, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRating2_Click">
+                        <TextBlock Foreground="#F39C12">
+                            <Run Text="★ 2 ("/><Run Text="{Binding Star2Count, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Style="{StaticResource FilterChipBtn}" Click="FilterRating1_Click">
+                        <TextBlock Foreground="#F39C12">
+                            <Run Text="★ 1 ("/><Run Text="{Binding Star1Count, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
                     </Button>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#E67E22" CornerRadius="3" Padding="6,2" Margin="6,0"
+                    <Border Background="#D35400" CornerRadius="3" Padding="6,2" Margin="4,0"
                             Visibility="{Binding UnsavedCount, Converter={StaticResource BoolToVis}}">
-                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF">
+                        <TextBlock FontSize="10" FontWeight="Bold" Foreground="#FFFFFF">
                             <Run Text="{Binding UnsavedCount, Mode=OneWay}"/><Run Text=" alterações pendentes em XMP"/>
                         </TextBlock>
                     </Border>
@@ -164,139 +285,166 @@
             </DockPanel>
         </Border>
 
-        <!-- ÁREA CENTRAL: GRADE OU FOTO ÚNICA -->
+        <!-- ÁREA CENTRAL: GRADE VIRTUALIZADA OU FOTO ÚNICA -->
         <Grid Grid.Row="2">
 
-            <!-- MODO 1: GRADE DE FOTOS (CONTACT SHEET) -->
-            <ListBox x:Name="PhotoListBox"
-                     ItemsSource="{Binding Photos}"
-                     SelectedItem="{Binding SelectedPhoto, Mode=TwoWay}"
+            <!-- MODO 1: GRADE VIRTUALIZADA POR LINHAS (ALTA PERFORMANCE) -->
+            <ListBox x:Name="RowsListBox"
+                     ItemsSource="{Binding Rows}"
                      Visibility="{Binding IsGridViewMode, Converter={StaticResource BoolToVis}}"
-                     Background="#141414"
+                     Background="#101010"
                      BorderThickness="0"
-                     Padding="12"
+                     Padding="10"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.CanContentScroll="True"
                      VirtualizingPanel.IsVirtualizing="True"
                      VirtualizingPanel.VirtualizationMode="Recycling"
-                     MouseDoubleClick="PhotoListBox_MouseDoubleClick">
-
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
+                     VirtualizingPanel.ScrollUnit="Pixel">
 
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
-                        <Setter Property="Margin" Value="6"/>
                         <Setter Property="Padding" Value="0"/>
-                        <Setter Property="BorderThickness" Value="2"/>
-                        <Setter Property="BorderBrush" Value="#252525"/>
-                        <Setter Property="Background" Value="#1E1E1E"/>
+                        <Setter Property="Margin" Value="0,4"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <Border Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            CornerRadius="6"
-                                            Padding="4">
-                                        <ContentPresenter/>
-                                    </Border>
+                                    <ContentPresenter/>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="#555555"/>
-                                <Setter Property="Background" Value="#242424"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="BorderBrush" Value="#3498DB"/>
-                                <Setter Property="Background" Value="#2A2A2A"/>
-                            </Trigger>
-                        </Style.Triggers>
                     </Style>
                 </ListBox.ItemContainerStyle>
 
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:PhotoViewModel}">
-                        <Border Width="220" Height="230" Background="#1A1A1A" CornerRadius="4" ClipToBounds="True">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/>    <!-- Imagem -->
-                                    <RowDefinition Height="Auto"/> <!-- Metadados -->
-                                </Grid.RowDefinitions>
+                    <DataTemplate DataType="{x:Type vm:PhotoRowViewModel}">
+                        <ItemsControl ItemsSource="{Binding Columns}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
 
-                                <!-- Thumbnail -->
-                                <Border Grid.Row="0" Background="#111111">
-                                    <Grid>
-                                        <Image Source="{Binding Thumbnail}"
-                                               Stretch="Uniform"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:PhotoViewModel}">
+                                    <!-- CARD DA FOTO COM AURA VISUAL -->
+                                    <Border Width="260" Height="290" Margin="8,4"
+                                            Background="#1C1C1C"
+                                            BorderBrush="{Binding CardBorderBrush}"
+                                            BorderThickness="{Binding CardBorderThickness}"
+                                            Effect="{Binding AuraEffect}"
+                                            CornerRadius="6"
+                                            ClipToBounds="False"
+                                            MouseLeftButtonDown="PhotoCard_MouseLeftButtonDown">
 
-                                        <!-- Badge de Seleção (Pick / Reject) -->
-                                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
-                                                Background="{Binding StatusBadgeColor}"
-                                                CornerRadius="3" Padding="4,2">
-                                            <TextBlock FontSize="10" FontWeight="Bold" Foreground="#FFFFFF">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value=""/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsPicked}" Value="True">
-                                                                <Setter Property="Text" Value="PICK"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsRejected}" Value="True">
-                                                                <Setter Property="Text" Value="REJECT"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Border>
+                                        <Grid ClipToBounds="True">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>    <!-- Área da Imagem -->
+                                                <RowDefinition Height="Auto"/> <!-- Metadados & Botões -->
+                                            </Grid.RowDefinitions>
 
-                                        <!-- Badge de Estrelas -->
-                                        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6"
-                                                Background="#99000000" CornerRadius="3" Padding="4,1">
-                                            <TextBlock Text="{Binding RatingStars}" Foreground="#F39C12" FontSize="10"/>
-                                        </Border>
+                                            <!-- Thumbnail e Badges -->
+                                            <Border Grid.Row="0" Background="#0C0C0C" CornerRadius="5,5,0,0">
+                                                <Grid>
+                                                    <Image Source="{Binding Thumbnail}"
+                                                           Stretch="Uniform"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           RenderOptions.BitmapScalingMode="HighQuality"/>
 
-                                        <!-- Faixa de Cor / Label -->
-                                        <Border HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="3"
-                                                Background="{Binding LabelBrush}"/>
-                                    </Grid>
-                                </Border>
+                                                    <!-- Badge de Status (PICK / REJECT) -->
+                                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
+                                                            Background="{Binding StatusBadgeColor}"
+                                                            CornerRadius="3" Padding="5,2">
+                                                        <TextBlock FontSize="10" FontWeight="Bold" Foreground="#FFFFFF">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value=""/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsPicked}" Value="True">
+                                                                            <Setter Property="Text" Value="✔ PICK"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsRejected}" Value="True">
+                                                                            <Setter Property="Text" Value="✖ REJECT"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
 
-                                <!-- Informações do Arquivo -->
-                                <Border Grid.Row="1" Background="#202020" Padding="6,5">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding FileName}" Foreground="#E0E0E0" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding FormattedSize}" Foreground="#888888" FontSize="10" Margin="4,0,0,0"/>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </Border>
+                                                    <!-- Faixa de Label de Cor inferior -->
+                                                    <Border HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="3"
+                                                            Background="{Binding LabelBrush}"/>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Rodapé do Card: Nome, Tamanho, Estrelas e Botões Físicos -->
+                                            <Border Grid.Row="1" Background="#1E1E1E" Padding="8,6" CornerRadius="0,0,5,5">
+                                                <StackPanel>
+                                                    <!-- Nome do Arquivo e Tamanho -->
+                                                    <Grid Margin="0,0,0,4">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding FileName}" Foreground="#EEEEEE"
+                                                                   FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding FormattedSize}" Foreground="#777777"
+                                                                   FontSize="10" Margin="4,0,0,0"/>
+                                                    </Grid>
+
+                                                    <!-- Estrelas Clicáveis (1 a 5) -->
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2">
+                                                        <Button Content="★" Style="{StaticResource StarBtn}" Foreground="{Binding Star1Brush}"
+                                                                Click="CardStar1_Click" ToolTip="1 Estrela"/>
+                                                        <Button Content="★" Style="{StaticResource StarBtn}" Foreground="{Binding Star2Brush}"
+                                                                Click="CardStar2_Click" ToolTip="2 Estrelas"/>
+                                                        <Button Content="★" Style="{StaticResource StarBtn}" Foreground="{Binding Star3Brush}"
+                                                                Click="CardStar3_Click" ToolTip="3 Estrelas"/>
+                                                        <Button Content="★" Style="{StaticResource StarBtn}" Foreground="{Binding Star4Brush}"
+                                                                Click="CardStar4_Click" ToolTip="4 Estrelas"/>
+                                                        <Button Content="★" Style="{StaticResource StarBtn}" Foreground="{Binding Star5Brush}"
+                                                                Click="CardStar5_Click" ToolTip="5 Estrelas"/>
+                                                    </StackPanel>
+
+                                                    <!-- Botões Físicos Clicáveis (Pick / Reject / Limpar) -->
+                                                    <Grid Margin="0,4,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <Button Grid.Column="0" Content="✔ Escolher" Style="{StaticResource CardPickBtn}"
+                                                                Click="CardBtnPick_Click" ToolTip="Marcar como Pick (P)"/>
+                                                        <Button Grid.Column="1" Content="✖ Rejeitar" Style="{StaticResource CardRejectBtn}"
+                                                                Click="CardBtnReject_Click" ToolTip="Marcar como Rejeitada (X)"/>
+                                                        <Button Grid.Column="2" Content="↺" Style="{StaticResource CardActionBtn}"
+                                                                Click="CardBtnClear_Click" ToolTip="Limpar marcações (U)"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
             <!-- MODO 2: FOTO ÚNICA (LOUPE VIEW) -->
-            <Grid Visibility="{Binding IsSingleViewMode, Converter={StaticResource BoolToVis}}" Background="#0D0D0D">
+            <Grid Visibility="{Binding IsSingleViewMode, Converter={StaticResource BoolToVis}}" Background="#0A0A0A">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/> <!-- Overlay superior com dados da foto -->
-                    <RowDefinition Height="*"/>    <!-- Imagem em tela cheia -->
+                    <RowDefinition Height="Auto"/> <!-- Barra superior da foto -->
+                    <RowDefinition Height="*"/>    <!-- Imagem central -->
+                    <RowDefinition Height="Auto"/> <!-- Barra inferior de ações físicas da foto -->
                 </Grid.RowDefinitions>
 
-                <!-- Barra de Informações da Foto Única -->
+                <!-- Barra Superior de Dados da Foto Única -->
                 <Border Grid.Row="0" Background="#CC181818" Padding="16,8">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -306,68 +454,150 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding SelectedPhoto.FileName}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" Margin="0,0,10,0"/>
-                            <TextBlock Text="{Binding SelectedPhoto.Extension}" Foreground="#3498DB" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="{Binding SelectedPhoto.FileName}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding SelectedPhoto.Extension}" Foreground="#3498DB" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding SelectedPhoto.FormattedSize}" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Indicador de Status Central -->
+                        <!-- Indicador de Status Central com Aura -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding SelectedPhoto.RatingStars}" Foreground="#F39C12" FontSize="16" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                            <Border Background="{Binding SelectedPhoto.StatusBadgeColor}" CornerRadius="3" Padding="6,2" Margin="0,0,10,0">
-                                <TextBlock Text="{Binding SelectedPhoto.IsPicked, Converter={StaticResource BoolToVis}}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="11"/>
+                            <Border Background="{Binding SelectedPhoto.StatusBadgeColor}" CornerRadius="4" Padding="8,3" Margin="0,0,10,0">
+                                <TextBlock FontSize="12" FontWeight="Bold" Foreground="#FFFFFF">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="NÃO AVALIADA"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPhoto.IsPicked}" Value="True">
+                                                    <Setter Property="Text" Value="✔ SELECIONADA (PICK)"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedPhoto.IsRejected}" Value="True">
+                                                    <Setter Property="Text" Value="✖ REJEITADA"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Border>
                         </StackPanel>
 
-                        <!-- Botão para voltar à grade -->
-                        <Button Grid.Column="2" Content="✕ Fechar Loupe (Espaço)" Style="{StaticResource ToolbarBtn}" Click="BtnToggleView_Click"/>
+                        <Button Grid.Column="2" Content="✕ Voltar à Grade (Espaço)" Style="{StaticResource ToolbarBtn}" Click="BtnToggleView_Click"/>
                     </Grid>
                 </Border>
 
                 <!-- Imagem em Alta Resolução -->
-                <Image Grid.Row="1"
-                       Source="{Binding LoupeImage}"
-                       Stretch="Uniform"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Margin="10"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                <Border Grid.Row="1" Margin="14"
+                        BorderBrush="{Binding SelectedPhoto.CardBorderBrush}"
+                        BorderThickness="{Binding SelectedPhoto.CardBorderThickness}"
+                        Effect="{Binding SelectedPhoto.AuraEffect}"
+                        CornerRadius="4" ClipToBounds="True">
+                    <Image Source="{Binding LoupeImage}"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
+
+                <!-- Barra Inferior de Ações da Foto Única (Botões Físicos) -->
+                <Border Grid.Row="2" Background="#CC181818" Padding="16,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Navegação -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="◀ Anterior (A)" Style="{StaticResource ToolbarBtn}" Click="BtnPrevious_Click"/>
+                            <Button Content="Próxima (D) ▶" Style="{StaticResource ToolbarBtn}" Click="BtnNext_Click"/>
+                        </StackPanel>
+
+                        <!-- Botões de Ação Físicos Centrais -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Content="✔ Escolher (P)" Style="{StaticResource CardPickBtn}" Padding="14,6" FontSize="12" Margin="4,0"
+                                    Click="LoupePick_Click"/>
+                            <Button Content="✖ Rejeitar (X)" Style="{StaticResource CardRejectBtn}" Padding="14,6" FontSize="12" Margin="4,0"
+                                    Click="LoupeReject_Click"/>
+                            <Button Content="↺ Limpar (U)" Style="{StaticResource CardActionBtn}" Padding="10,6" FontSize="12" Margin="4,0"
+                                    Click="LoupeClear_Click"/>
+
+                            <!-- Estrelas Clicáveis no Loupe -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                <Button Content="★" Style="{StaticResource StarBtn}" FontSize="18" Foreground="{Binding SelectedPhoto.Star1Brush}"
+                                        Click="LoupeStar1_Click" ToolTip="1 Estrela"/>
+                                <Button Content="★" Style="{StaticResource StarBtn}" FontSize="18" Foreground="{Binding SelectedPhoto.Star2Brush}"
+                                        Click="LoupeStar2_Click" ToolTip="2 Estrelas"/>
+                                <Button Content="★" Style="{StaticResource StarBtn}" FontSize="18" Foreground="{Binding SelectedPhoto.Star3Brush}"
+                                        Click="LoupeStar3_Click" ToolTip="3 Estrelas"/>
+                                <Button Content="★" Style="{StaticResource StarBtn}" FontSize="18" Foreground="{Binding SelectedPhoto.Star4Brush}"
+                                        Click="LoupeStar4_Click" ToolTip="4 Estrelas"/>
+                                <Button Content="★" Style="{StaticResource StarBtn}" FontSize="18" Foreground="{Binding SelectedPhoto.Star5Brush}"
+                                        Click="LoupeStar5_Click" ToolTip="5 Estrelas"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Atalho de Ajuda Direita -->
+                        <TextBlock Grid.Column="2" Text="P: Pick  |  X: Reject  |  1-5: Estrelas" Foreground="#777777" FontSize="11" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
             </Grid>
 
-            <!-- Overlay de Carregamento -->
-            <Grid Background="#B3000000" Visibility="{Binding IsLoadingFolder, Converter={StaticResource BoolToVis}}">
-                <Border Background="#252525" CornerRadius="8" Padding="24,18" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <!-- BANNER DE ENTRADA: ARRASTAR E SOLTAR (Quando nenhuma foto está carregada) -->
+            <Grid Visibility="{Binding Photos.Count, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}">
+                <Border Background="#121212" Margin="40" CornerRadius="12" BorderBrush="#252525" BorderThickness="2"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Padding="40,30">
                     <StackPanel HorizontalAlignment="Center">
-                        <ProgressBar IsIndeterminate="True" Width="180" Height="6" Margin="0,0,0,12" Foreground="#3498DB"/>
+                        <TextBlock Text="⚡ PHOTOPICK" FontSize="20" FontWeight="Bold" Foreground="#3498DB" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="Arraste e solte sua pasta de fotos RAW / JPG aqui" FontSize="15" Foreground="#E0E0E0" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                        <TextBlock Text="Ou use os botões acima para selecionar a pasta ou fotos da sessão." FontSize="12" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,18"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="📁 Selecionar Pasta..." Style="{StaticResource ToolbarBtn}" Padding="16,8" Margin="6,0" Click="BtnOpenFolder_Click"/>
+                            <Button Content="🖼️ Selecionar Fotos..." Style="{StaticResource ToolbarBtn}" Padding="16,8" Margin="6,0" Click="BtnOpenPhotos_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- OVERLAY DE CARREGAMENTO / EXPORTAÇÃO -->
+            <Grid Background="#CC000000" Visibility="{Binding IsLoadingFolder, Converter={StaticResource BoolToVis}}">
+                <Border Background="#222222" CornerRadius="8" Padding="28,20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#383838" BorderThickness="1">
+                    <StackPanel HorizontalAlignment="Center">
+                        <ProgressBar IsIndeterminate="True" Width="200" Height="6" Margin="0,0,0,14" Foreground="#3498DB"/>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid Background="#CC000000" Visibility="{Binding IsExporting, Converter={StaticResource BoolToVis}}">
+                <Border Background="#222222" CornerRadius="8" Padding="28,20" HorizontalAlignment="Center" VerticalAlignment="Center" BorderBrush="#383838" BorderThickness="1">
+                    <StackPanel HorizontalAlignment="Center">
+                        <ProgressBar IsIndeterminate="True" Width="200" Height="6" Margin="0,0,0,14" Foreground="#2ECC71"/>
                         <TextBlock Text="{Binding StatusMessage}" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
             </Grid>
         </Grid>
 
-        <!-- BARRA DE STATUS E ATALHOS INFERIOR -->
-        <Border Grid.Row="3" Background="#111111" BorderBrush="#222222" BorderThickness="0,1,0,0" Padding="14,6">
+        <!-- BARRA DE STATUS INFERIOR -->
+        <Border Grid.Row="3" Background="#0F0F0F" BorderBrush="#1F1F1F" BorderThickness="0,1,0,0" Padding="12,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Mensagem de Status -->
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center"/>
 
-                <!-- Guia Rápido de Atalhos -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Foreground="#777777" FontSize="10">
-                        <Run Text="ATALHOS: " FontWeight="Bold" Foreground="#999999"/>
+                    <TextBlock Foreground="#666666" FontSize="10">
+                        <Run Text="ATALHOS: " FontWeight="Bold" Foreground="#888888"/>
                         <Run Text="[P] Pick  |  "/>
                         <Run Text="[X] Reject  |  "/>
                         <Run Text="[U] Limpar  |  "/>
                         <Run Text="[1-5] Estrelas  |  "/>
-                        <Run Text="[0] Sem Estrelas  |  "/>
                         <Run Text="[Setas] Navegar  |  "/>
                         <Run Text="[Espaço] Loupe  |  "/>
-                        <Run Text="[Ctrl+S] Sincronizar"/>
+                        <Run Text="[Ctrl+S] Sincronizar Lightroom"/>
                     </TextBlock>
                 </StackPanel>
             </Grid>

@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using System.Windows.Media.Effects;
 using PhotoPick.Core.Models;
 using PhotoPick.Core.Services;
 using PhotoPick.Desktop.Helpers;
@@ -33,10 +33,7 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (_model.Rating != value)
             {
                 _session.SetRating(_model, value);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(RatingStars));
-                OnPropertyChanged(nameof(IsPicked));
-                OnPropertyChanged(nameof(StatusBadgeColor));
+                NotifyRatingAndAuraChanged();
             }
         }
     }
@@ -49,11 +46,7 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (_model.ColorLabel != value)
             {
                 _session.SetColorLabel(_model, value);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsPicked));
-                OnPropertyChanged(nameof(IsRejected));
-                OnPropertyChanged(nameof(LabelBrush));
-                OnPropertyChanged(nameof(StatusBadgeColor));
+                NotifyRatingAndAuraChanged();
             }
         }
     }
@@ -66,11 +59,7 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (_model.IsPicked != value)
             {
                 _session.TogglePick(_model);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(Rating));
-                OnPropertyChanged(nameof(ColorLabel));
-                OnPropertyChanged(nameof(RatingStars));
-                OnPropertyChanged(nameof(StatusBadgeColor));
+                NotifyRatingAndAuraChanged();
             }
         }
     }
@@ -83,9 +72,7 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (_model.IsRejected != value)
             {
                 _session.ToggleReject(_model);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ColorLabel));
-                OnPropertyChanged(nameof(StatusBadgeColor));
+                NotifyRatingAndAuraChanged();
             }
         }
     }
@@ -93,23 +80,82 @@ public class PhotoViewModel : INotifyPropertyChanged
     public string RatingStars => _model.RatingStars;
     public bool IsModified => _model.IsModified;
 
-    public ImageSource? Thumbnail
+    #region Estrelas Individuais Interativas
+
+    public bool IsStar1Active => Rating >= 1;
+    public bool IsStar2Active => Rating >= 2;
+    public bool IsStar3Active => Rating >= 3;
+    public bool IsStar4Active => Rating >= 4;
+    public bool IsStar5Active => Rating >= 5;
+
+    public Brush Star1Brush => IsStar1Active ? BrushesGold : BrushesInactiveStar;
+    public Brush Star2Brush => IsStar2Active ? BrushesGold : BrushesInactiveStar;
+    public Brush Star3Brush => IsStar3Active ? BrushesGold : BrushesInactiveStar;
+    public Brush Star4Brush => IsStar4Active ? BrushesGold : BrushesInactiveStar;
+    public Brush Star5Brush => IsStar5Active ? BrushesGold : BrushesInactiveStar;
+
+    private static readonly SolidColorBrush BrushesGold = new(Color.FromRgb(243, 156, 18));
+    private static readonly SolidColorBrush BrushesInactiveStar = new(Color.FromRgb(70, 70, 70));
+
+    public void ClickStar(int starNumber)
+    {
+        // Se já está na mesma estrela, zera. Senão, atribui a estrela clicada
+        Rating = Rating == starNumber ? 0 : starNumber;
+    }
+
+    #endregion
+
+    #region Aura Visual (Verde para Pick, Vermelho para Reject)
+
+    public Brush CardBorderBrush
     {
         get
         {
-            if (_thumbnail == null && !_isLoading)
-            {
-                _ = LoadThumbnailAsync();
-            }
-            return _thumbnail;
+            if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113));     // Verde esmeralda
+            if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60));   // Vermelho coral
+            if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18));   // Dourado
+            return new SolidColorBrush(Color.FromRgb(38, 38, 38));                    // Neutro escuro
         }
-        private set
+    }
+
+    public double CardBorderThickness => (IsPicked || IsRejected) ? 2.5 : 1.5;
+
+    public Effect? AuraEffect
+    {
+        get
         {
-            if (_thumbnail != value)
+            if (IsPicked)
             {
-                _thumbnail = value;
-                OnPropertyChanged();
+                return new DropShadowEffect
+                {
+                    Color = Color.FromRgb(46, 204, 113),
+                    BlurRadius = 22,
+                    ShadowDepth = 0,
+                    Opacity = 0.85
+                };
             }
+            if (IsRejected)
+            {
+                return new DropShadowEffect
+                {
+                    Color = Color.FromRgb(231, 76, 60),
+                    BlurRadius = 22,
+                    ShadowDepth = 0,
+                    Opacity = 0.85
+                };
+            }
+            return null;
+        }
+    }
+
+    public Brush StatusBadgeColor
+    {
+        get
+        {
+            if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113));
+            if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60));
+            if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18));
+            return new SolidColorBrush(Color.FromRgb(80, 80, 80));
         }
     }
 
@@ -123,16 +169,37 @@ public class PhotoViewModel : INotifyPropertyChanged
         _ => Brushes.Transparent
     };
 
-    public Brush StatusBadgeColor
+    #endregion
+
+    #region Thumbnail
+
+    public ImageSource? Thumbnail
     {
-        get
+        get => _thumbnail;
+        set
         {
-            if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113)); // Verde
-            if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60)); // Vermelho
-            if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18)); // Laranja/Ouro
-            return new SolidColorBrush(Color.FromRgb(100, 100, 100)); // Neutro
+            if (_thumbnail != value)
+            {
+                _thumbnail = value;
+                OnPropertyChanged();
+            }
         }
     }
+
+    public bool IsLoadingThumbnail
+    {
+        get => _isLoading;
+        set
+        {
+            if (_isLoading != value)
+            {
+                _isLoading = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    #endregion
 
     public PhotoViewModel(PhotoItem model, CullingSession session)
     {
@@ -141,25 +208,26 @@ public class PhotoViewModel : INotifyPropertyChanged
         _model.PropertyChanged += (s, e) =>
         {
             OnPropertyChanged(e.PropertyName);
-            if (e.PropertyName == nameof(PhotoItem.ThumbnailCachePath))
+            if (e.PropertyName is nameof(PhotoItem.Rating) or nameof(PhotoItem.ColorLabel))
             {
-                _ = LoadThumbnailAsync();
+                NotifyRatingAndAuraChanged();
             }
         };
     }
 
-    public async Task LoadThumbnailAsync()
+    public async Task EnsureThumbnailLoadedAsync()
     {
-        if (_isLoading) return;
+        if (_thumbnail != null || _isLoading) return;
         _isLoading = true;
+        OnPropertyChanged(nameof(IsLoadingThumbnail));
 
         try
         {
             string? thumbPath = await _session.EnsureThumbnailAsync(_model);
             if (!string.IsNullOrEmpty(thumbPath) && File.Exists(thumbPath))
             {
-                // Carrega em resolução reduzida (320px) para máxima performance de memória na grade
-                var bmp = ImageHelper.LoadBitmapFromFile(thumbPath, _model.Orientation, decodePixelWidth: 360);
+                // Carrega decodificando a 320px para não consumir RAM
+                var bmp = ImageHelper.LoadBitmapFromFile(thumbPath, _model.Orientation, decodePixelWidth: 320);
                 Thumbnail = bmp;
             }
         }
@@ -167,7 +235,48 @@ public class PhotoViewModel : INotifyPropertyChanged
         finally
         {
             _isLoading = false;
+            OnPropertyChanged(nameof(IsLoadingThumbnail));
         }
+    }
+
+    public void TogglePick()
+    {
+        IsPicked = !IsPicked;
+    }
+
+    public void ToggleReject()
+    {
+        IsRejected = !IsRejected;
+    }
+
+    public void ClearMarks()
+    {
+        Rating = 0;
+        ColorLabel = null;
+    }
+
+    private void NotifyRatingAndAuraChanged()
+    {
+        OnPropertyChanged(nameof(Rating));
+        OnPropertyChanged(nameof(RatingStars));
+        OnPropertyChanged(nameof(ColorLabel));
+        OnPropertyChanged(nameof(IsPicked));
+        OnPropertyChanged(nameof(IsRejected));
+        OnPropertyChanged(nameof(CardBorderBrush));
+        OnPropertyChanged(nameof(CardBorderThickness));
+        OnPropertyChanged(nameof(AuraEffect));
+        OnPropertyChanged(nameof(StatusBadgeColor));
+        OnPropertyChanged(nameof(LabelBrush));
+        OnPropertyChanged(nameof(IsStar1Active));
+        OnPropertyChanged(nameof(IsStar2Active));
+        OnPropertyChanged(nameof(IsStar3Active));
+        OnPropertyChanged(nameof(IsStar4Active));
+        OnPropertyChanged(nameof(IsStar5Active));
+        OnPropertyChanged(nameof(Star1Brush));
+        OnPropertyChanged(nameof(Star2Brush));
+        OnPropertyChanged(nameof(Star3Brush));
+        OnPropertyChanged(nameof(Star4Brush));
+        OnPropertyChanged(nameof(Star5Brush));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
