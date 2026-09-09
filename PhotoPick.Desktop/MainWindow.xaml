@@ -202,8 +202,8 @@
                     <Button Content="🔍 Alternar Visão (Espaço)" Style="{StaticResource ToolbarBtn}" Click="BtnToggleView_Click"/>
                     <Button Content="📦 Criar Pasta c/ Selecionadas..." Style="{StaticResource ExportBtn}" Click="BtnExportSelected_Click"
                             ToolTip="Copia todas as fotos marcadas como Pick e seus .xmp para uma nova pasta"/>
-                    <Button Content="⚡ Sincronizar &amp; Abrir no Lightroom" Style="{StaticResource LightroomBtn}" Click="BtnSyncLightroom_Click"
-                            ToolTip="Grava os arquivos .xmp e inicia o Adobe Lightroom Classic automaticamente"/>
+                    <Button Content="⚡ Enviar Selecionadas ao Lightroom" Style="{StaticResource LightroomBtn}" Click="BtnSyncLightroom_Click"
+                            ToolTip="Envia exclusivamente as fotos selecionadas para o Adobe Lightroom Classic"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -573,6 +573,72 @@
                     <StackPanel HorizontalAlignment="Center">
                         <ProgressBar IsIndeterminate="True" Width="200" Height="6" Margin="0,0,0,14" Foreground="#2ECC71"/>
                         <TextBlock Text="{Binding StatusMessage}" Foreground="#FFFFFF" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- MODAL DE ENVIO EXCLUSIVO PARA O LIGHTROOM -->
+            <Grid Background="#D9000000" Visibility="{Binding IsLightroomModalOpen, Converter={StaticResource BoolToVis}}">
+                <Border Background="#1E1E1E" BorderBrush="#383838" BorderThickness="1" CornerRadius="10"
+                        Padding="28,24" MaxWidth="580" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <!-- Título -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <Border Background="#0F7A3E" CornerRadius="4" Padding="6,2" Margin="0,0,10,0">
+                                <TextBlock Text="LIGHTROOM CLASSIC" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF"/>
+                            </Border>
+                            <TextBlock Text="Enviar Fotos Selecionadas" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </StackPanel>
+
+                        <TextBlock Margin="0,0,0,18" Foreground="#CCCCCC" FontSize="13" TextWrapping="Wrap">
+                            <Run Text="Você tem "/><Run Text="{Binding SelectedToSendCount, Mode=OneWay}" FontWeight="Bold" Foreground="#2ECC71"/><Run Text=" fotos selecionadas prontas para o Lightroom Classic."/><LineBreak/>
+                            <Run Text="Escolha como deseja enviar para a importação do Lightroom:" Foreground="#888888"/>
+                        </TextBlock>
+
+                        <!-- Opção 1: Criar pasta com selecionadas (Recomendado) -->
+                        <Border Background="#252525" BorderBrush="#2ECC71" BorderThickness="1.5" CornerRadius="6"
+                                Padding="14,12" Margin="0,0,0,12" Cursor="Hand"
+                                MouseLeftButtonDown="ModalBtnSubfolder_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📁" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Criar pasta '_SELECIONADAS' e Abrir" FontWeight="Bold" FontSize="13" Foreground="#2ECC71"/>
+                                        <Border Background="#107C41" CornerRadius="3" Padding="4,1" Margin="8,0,0,0">
+                                            <TextBlock Text="RECOMENDADO" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Copia apenas as fotos selecionadas e seus .xmp para uma subpasta. O Lightroom abrirá a tela de importação mostrando EXCLUSIVAMENTE as selecionadas (zero fotos rejeitadas na tela)."
+                                               Foreground="#AAAAAA" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Opção 2: Gravar XMP na pasta atual -->
+                        <Border Background="#252525" BorderBrush="#444444" BorderThickness="1" CornerRadius="6"
+                                Padding="14,12" Margin="0,0,0,18" Cursor="Hand"
+                                MouseLeftButtonDown="ModalBtnInPlace_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="⚡" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Gravar XMP apenas nas Selecionadas (Pasta Atual)" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="Mantém todas as fotos na pasta original, gravando 1 Estrela e Rótulo Verde nos .xmp apenas das escolhidas. No Lightroom, filtre por classificação ou use Ctrl+Alt+R."
+                                               Foreground="#888888" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Botão Cancelar -->
+                        <Button Content="Cancelar" Style="{StaticResource ToolbarBtn}" HorizontalAlignment="Right"
+                                Padding="16,6" Click="ModalBtnCancel_Click"/>
                     </StackPanel>
                 </Border>
             </Grid>

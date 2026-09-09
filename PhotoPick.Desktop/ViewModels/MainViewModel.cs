@@ -228,51 +228,137 @@ public class MainViewModel : INotifyPropertyChanged
 
     #endregion
 
-    #region Sincronização & Abertura do Lightroom Classic
+    #region Sincronização & Abertura Exclusiva de Selecionadas no Lightroom Classic
 
-    public async Task SyncAndOpenLightroomAsync()
+    private bool _isLightroomModalOpen;
+    public bool IsLightroomModalOpen
+    {
+        get => _isLightroomModalOpen;
+        set { _isLightroomModalOpen = value; OnPropertyChanged(); }
+    }
+
+    public int SelectedToSendCount
+    {
+        get
+        {
+            if (_session.CurrentFilter is PhotoFilterMode.PickedOnly or >= PhotoFilterMode.Rating5)
+            {
+                return _session.FilteredPhotos.Count;
+            }
+            int count = _session.FilteredPhotos.Count(p => p.IsPicked);
+            return count > 0 ? count : _session.PickedCount;
+        }
+    }
+
+    public void OpenLightroomModal()
     {
         if (TotalCount == 0)
         {
-            MessageBox.Show("Abra uma pasta de fotos antes de sincronizar com o Lightroom.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Abra uma pasta de fotos antes de enviar para o Lightroom.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
+        if (SelectedToSendCount == 0)
+        {
+            MessageBox.Show("Nenhuma foto selecionada! Marque as melhores fotos com a tecla 'P' ou botão verde 'Escolher' antes de enviar ao Lightroom.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        OnPropertyChanged(nameof(SelectedToSendCount));
+        IsLightroomModalOpen = true;
+    }
+
+    public void CloseLightroomModal()
+    {
+        IsLightroomModalOpen = false;
+    }
+
+    public async Task SendToLightroomViaSubfolderAsync()
+    {
+        IsLightroomModalOpen = false;
         IsSavingXmp = true;
-        StatusMessage = "Gravando arquivos sidecar .xmp compatíveis com o Lightroom...";
+
+        var targetPhotos = GetActiveTargetPhotos();
+        string targetSubdir = Path.Combine(_session.CurrentDirectory!, "_SELECIONADAS_LIGHTROOM");
+        StatusMessage = $"Copiando {targetPhotos.Count} fotos selecionadas para a pasta _SELECIONADAS_LIGHTROOM...";
 
         try
         {
-            int saved = await _session.SaveAllXmpAsync();
-            StatusMessage = $"{saved} metadados gravados em .xmp!";
+            int copied = await _session.ExportSpecificPhotosAsync(targetPhotos, targetSubdir);
+            StatusMessage = $"{copied} fotos selecionadas preparadas em: _SELECIONADAS_LIGHTROOM";
 
-            // Localiza e executa o Lightroom Classic
-            string? lrPath = _lightroomService.FindLightroomExecutable();
-            bool launched = false;
-            if (lrPath != null)
-            {
-                launched = _lightroomService.LaunchLightroom(_session.CurrentDirectory);
-            }
+            // Inicia o Lightroom apontando EXCLUSIVAMENTE para a pasta com as selecionadas
+            bool launched = _lightroomService.LaunchLightroom(targetSubdir);
 
-            string infoMessage = launched
-                ? $"✅ Seleção sincronizada com sucesso!\n\nO Lightroom Classic foi iniciado automaticamente.\n\n" +
-                  $"📌 IMPORTANTE SOBRE A SINCRONIZAÇÃO NO LIGHTROOM:\n" +
-                  $"1. Se a pasta for NOVA: Clique em 'Importar' no Lightroom — todas as fotos com 1 estrela e rótulo verde já aparecerão identificadas!\n\n" +
-                  $"2. Se a pasta JÁ ESTAVA importada no catálogo do Lightroom: Selecione as fotos na biblioteca do Lightroom e pressione Ctrl + Alt + R (ou clique com botão direito: Metadados -> Ler Metadados dos Arquivos). O Lightroom atualizará todas as estrelas e cores na hora!"
-                : $"✅ Arquivos .xmp gravados com sucesso!\n\nNão foi possível abrir o executável do Lightroom automaticamente em C:\\Program Files\\Adobe.\nAbra o Lightroom Classic manualmente e importe ou pressione Ctrl+Alt+R na pasta.";
+            string info = launched
+                ? $"✅ SUCESSO!\n\nForam enviadas EXCLUSIVAMENTE as {copied} fotos selecionadas para o Lightroom Classic!\n\nPasta criada: {targetSubdir}\n\nO Lightroom Classic foi iniciado apontando diretamente para essa pasta. Na tela de importação, aparecem APENAS as fotos selecionadas, sem nenhuma foto rejeitada!"
+                : $"✅ Foram copiadas {copied} fotos selecionadas para:\n{targetSubdir}\n\nAbra o Lightroom Classic e importe essa pasta.";
 
-            MessageBox.Show(infoMessage, "Sincronização com Lightroom Classic", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(info, "Enviado para o Lightroom Classic", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Erro na sincronização: {ex.Message}";
-            MessageBox.Show($"Erro: {ex.Message}", "Falha ao Sincronizar", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusMessage = $"Erro ao preparar selecionadas: {ex.Message}";
+            MessageBox.Show($"Erro: {ex.Message}", "Falha", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
             IsSavingXmp = false;
             RefreshStats();
         }
+    }
+
+    public async Task SendToLightroomInPlaceAsync()
+    {
+        IsLightroomModalOpen = false;
+        IsSavingXmp = true;
+
+        var targetPhotos = GetActiveTargetPhotos();
+        StatusMessage = $"Gravando metadados XMP apenas nas {targetPhotos.Count} fotos selecionadas...";
+
+        try
+        {
+            int saved = await _session.SaveOnlySelectedXmpAsync(targetPhotos);
+            StatusMessage = $"{saved} fotos selecionadas sincronizadas com XMP!";
+
+            bool launched = _lightroomService.LaunchLightroom(_session.CurrentDirectory);
+
+            string info = launched
+                ? $"✅ Metadados XMP gravados exclusivamente nas {saved} fotos selecionadas!\n\nO Lightroom Classic foi aberto.\n\n📌 DICA DE IMPORTAÇÃO NO LIGHTROOM:\n1. Se a pasta for NOVA: Na tela de importação ou na grade de biblioteca, filtre por 1 Estrela ou Rótulo Verde para ver apenas as fotos escolhidas.\n2. Se a pasta JÁ ESTAVA no catálogo: Pressione Ctrl + Alt + R na pasta para ler os novos arquivos XMP."
+                : $"Metadados gravados com sucesso exclusivamente nas fotos selecionadas.";
+
+            MessageBox.Show(info, "Lightroom Classic", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Erro: {ex.Message}";
+            MessageBox.Show($"Erro: {ex.Message}", "Falha", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsSavingXmp = false;
+            RefreshStats();
+        }
+    }
+
+    private List<PhotoItem> GetActiveTargetPhotos()
+    {
+        if (_session.CurrentFilter is PhotoFilterMode.PickedOnly or >= PhotoFilterMode.Rating5)
+        {
+            return _session.FilteredPhotos.ToList();
+        }
+
+        var picked = _session.FilteredPhotos.Where(p => p.IsPicked).ToList();
+        if (picked.Count > 0) return picked;
+
+        return _session.FilteredPhotos.ToList();
+    }
+
+    public async Task SyncAndOpenLightroomAsync()
+    {
+        // Abre o modal de escolha com foco em enviar apenas as selecionadas
+        OpenLightroomModal();
+        await Task.CompletedTask;
     }
 
     #endregion

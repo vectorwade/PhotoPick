@@ -44,6 +44,21 @@ public partial class MainWindow : Window
         await ViewModel.ExportSelectedToFolderAsync();
     }
 
+    private async void ModalBtnSubfolder_Click(object sender, MouseButtonEventArgs e)
+    {
+        await ViewModel.SendToLightroomViaSubfolderAsync();
+    }
+
+    private async void ModalBtnInPlace_Click(object sender, MouseButtonEventArgs e)
+    {
+        await ViewModel.SendToLightroomInPlaceAsync();
+    }
+
+    private void ModalBtnCancel_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CloseLightroomModal();
+    }
+
     #endregion
 
     #region Filtros e Notas

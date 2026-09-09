@@ -169,29 +169,59 @@ public class CullingSession
         StatsChanged?.Invoke();
     }
 
-    public async Task<int> ExportSelectedPhotosAsync(string destinationFolder, IProgress<(int current, int total)>? progress = null, CancellationToken ct = default)
+    public async Task<int> SaveOnlySelectedXmpAsync(IEnumerable<PhotoItem>? targetItems = null, CancellationToken ct = default)
     {
-        var selected = _allPhotos.Where(p => p.IsPicked).ToList();
-        if (selected.Count == 0) return 0;
+        var selected = (targetItems ?? _allPhotos.Where(p => p.IsPicked)).Where(p => p.IsPicked).ToList();
+        var unselected = _allPhotos.Where(p => !p.IsPicked && (p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel) || p.HasXmp)).ToList();
+
+        // 1. Grava metadados XMP apenas nas selecionadas
+        foreach (var item in selected)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (item.Rating == 0) item.Rating = 1;
+            if (string.IsNullOrEmpty(item.ColorLabel)) item.ColorLabel = "Green";
+            _xmpService.WriteMetadata(item.FilePath, item.Rating, item.ColorLabel);
+            item.IsModified = false;
+        }
+
+        // 2. Limpa marcações de estrelas/cores de qualquer foto que não foi selecionada
+        foreach (var item in unselected)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (_xmpService.XmpExists(item.FilePath))
+            {
+                _xmpService.WriteMetadata(item.FilePath, 0, null);
+            }
+            item.IsModified = false;
+        }
+
+        await _database.SaveOrUpdatePhotosAsync(selected.Concat(unselected));
+        StatsChanged?.Invoke();
+        return selected.Count;
+    }
+
+    public async Task<int> ExportSpecificPhotosAsync(IEnumerable<PhotoItem> itemsToExport, string destinationFolder, IProgress<(int current, int total)>? progress = null, CancellationToken ct = default)
+    {
+        var list = itemsToExport.ToList();
+        if (list.Count == 0) return 0;
 
         Directory.CreateDirectory(destinationFolder);
 
-        // Primeiro, garante que os XMPs mais recentes foram gravados no disco de origem
-        await SaveAllXmpAsync(ct);
+        // Garante que o XMP de cada selecionada está salvo
+        await SaveOnlySelectedXmpAsync(list, ct);
 
         int copied = 0;
-        int total = selected.Count;
+        int total = list.Count;
 
         await Task.Run(() =>
         {
-            foreach (var photo in selected)
+            foreach (var photo in list)
             {
                 ct.ThrowIfCancellationRequested();
 
                 string destPhoto = Path.Combine(destinationFolder, photo.FileName);
                 File.Copy(photo.FilePath, destPhoto, overwrite: true);
 
-                // Copia o sidecar XMP correspondente se existir
                 string xmpSource = photo.XmpPath;
                 if (File.Exists(xmpSource))
                 {
@@ -205,6 +235,11 @@ public class CullingSession
         }, ct);
 
         return copied;
+    }
+
+    public async Task<int> ExportSelectedPhotosAsync(string destinationFolder, IProgress<(int current, int total)>? progress = null, CancellationToken ct = default)
+    {
+        return await ExportSpecificPhotosAsync(_allPhotos.Where(p => p.IsPicked), destinationFolder, progress, ct);
     }
 
     public void SetRating(PhotoItem item, int rating)
