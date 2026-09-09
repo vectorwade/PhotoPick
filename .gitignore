@@ -23,3 +23,7 @@ Desktop.ini
 # OS generated
 .DS_Store
 *.tmp
+
+# WiX
+*.wixpdb
+*.wixobj

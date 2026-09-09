@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:PhotoPick.Desktop.ViewModels"
         mc:Ignorable="d"
-        Title="PhotoPick — Culling Ultrarrápido de Fotos (Lightroom Classic)"
+        Title="MaviSelect — Culling Ultrarrápido de Fotos (Lightroom Classic)"
+        Icon="app_icon.ico"
         Height="860" Width="1340"
         MinHeight="600" MinWidth="950"
         WindowStartupLocation="CenterScreen"
@@ -181,8 +182,11 @@
 
                 <!-- Logo e Botões de Abrir -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#3498DB" CornerRadius="4" Padding="6,3" Margin="0,0,10,0">
-                        <TextBlock Text="PHOTOPICK" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF"/>
+                    <Border Background="#0B2035" BorderBrush="#2ECC71" BorderThickness="1.5" CornerRadius="6" Padding="6,3" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="app_icon.png" Width="18" Height="18" Margin="0,0,6,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="MAVISELECT" FontWeight="Bold" FontSize="11" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </Border>
                     <Button Content="📁 Abrir Pasta..." Style="{StaticResource ToolbarBtn}" Click="BtnOpenFolder_Click"
                             ToolTip="Abre seletor de diretório"/>
@@ -547,9 +551,10 @@
                 <Border Background="#121212" Margin="40" CornerRadius="12" BorderBrush="#252525" BorderThickness="2"
                         HorizontalAlignment="Center" VerticalAlignment="Center" Padding="40,30">
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="⚡ PHOTOPICK" FontSize="20" FontWeight="Bold" Foreground="#3498DB" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <Image Source="app_icon.png" Width="68" Height="68" Margin="0,0,0,12" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock Text="MAVISELECT" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                         <TextBlock Text="Arraste e solte sua pasta de fotos RAW / JPG aqui" FontSize="15" Foreground="#E0E0E0" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                        <TextBlock Text="Ou use os botões acima para selecionar a pasta ou fotos da sessão." FontSize="12" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,18"/>
+                        <TextBlock Text="Ou use os botões abaixo para selecionar a pasta ou fotos da sessão." FontSize="12" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,18"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="📁 Selecionar Pasta..." Style="{StaticResource ToolbarBtn}" Padding="16,8" Margin="6,0" Click="BtnOpenFolder_Click"/>
                             <Button Content="🖼️ Selecionar Fotos..." Style="{StaticResource ToolbarBtn}" Padding="16,8" Margin="6,0" Click="BtnOpenPhotos_Click"/>

@@ -254,13 +254,13 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (TotalCount == 0)
         {
-            MessageBox.Show("Abra uma pasta de fotos antes de enviar para o Lightroom.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Abra uma pasta de fotos antes de enviar para o Lightroom.", "MaviSelect", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
         if (SelectedToSendCount == 0)
         {
-            MessageBox.Show("Nenhuma foto selecionada! Marque as melhores fotos com a tecla 'P' ou botão verde 'Escolher' antes de enviar ao Lightroom.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Nenhuma foto selecionada! Marque as melhores fotos com a tecla 'P' ou botão verde 'Escolher' antes de enviar ao Lightroom.", "MaviSelect", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -369,13 +369,13 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (PickedCount == 0)
         {
-            MessageBox.Show("Nenhuma foto marcada como Selecionada (Pick). Marque algumas fotos com a tecla 'P' ou botão verde antes de exportar.", "PhotoPick", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Nenhuma foto marcada como Selecionada (Pick). Marque algumas fotos com a tecla 'P' ou botão verde antes de exportar.", "MaviSelect", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         string defaultExportDir = !string.IsNullOrEmpty(_session.CurrentDirectory)
             ? Path.Combine(_session.CurrentDirectory, "_SELECIONADAS_PICKS")
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "PhotoPick_Selecionadas");
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "MaviSelect_Selecionadas");
 
         var dialog = new OpenFolderDialog
         {

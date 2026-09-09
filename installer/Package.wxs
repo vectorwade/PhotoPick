@@ -1,0 +1,65 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="MaviSelect"
+           Manufacturer="Mavi Studio"
+           Version="1.0.0.0"
+           UpgradeCode="9D8B4D2F-A0C3-4841-A878-F5BE8F349AC1"
+           Scope="perUserOrMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do MaviSelect já está instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Ícone no Painel de Controle e no Menu Iniciar -->
+    <Icon Id="AppIcon" SourceFile="PhotoPick.Desktop\app_icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <!-- Pasta de Instalação em Arquivos de Programas -->
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="MaviSelect">
+        <Component Id="MainExecutable" Guid="E6B1D28C-2E54-4B2E-8E56-8A3F6D8841B1">
+          <File Id="MaviSelectExe" Source="publish\MaviSelect.exe" KeyPath="yes" />
+          <File Source="publish\MaviSelect.dll" />
+          <File Source="publish\MaviSelect.runtimeconfig.json" />
+          <File Source="publish\MaviSelect.deps.json" />
+          <File Source="publish\PhotoPick.Core.dll" />
+          <File Source="publish\Microsoft.Data.Sqlite.dll" />
+          <File Source="publish\e_sqlite3.dll" />
+          <File Source="publish\SQLitePCLRaw.core.dll" />
+          <File Source="publish\SQLitePCLRaw.batteries_v2.dll" />
+          <File Source="publish\SQLitePCLRaw.provider.e_sqlite3.dll" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Atalho no Menu Iniciar -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="ApplicationShortcut" Guid="72D98D5B-426C-4B94-A82F-FA8D1C7657DE">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="MaviSelect"
+                  Description="MaviSelect — Culling Ultrarrápido de Fotos para Adobe Lightroom Classic"
+                  Target="[INSTALLFOLDER]MaviSelect.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RegistryValue Root="HKCU" Key="Software\MaviStudio\MaviSelect" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <!-- Atalho na Área de Trabalho -->
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="C1283F41-114A-4965-BA22-55E8D2E16F71">
+        <Shortcut Id="ApplicationDesktopShortcut"
+                  Name="MaviSelect"
+                  Description="MaviSelect — Culling Ultrarrápido de Fotos para Adobe Lightroom Classic"
+                  Target="[INSTALLFOLDER]MaviSelect.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon" />
+        <RegistryValue Root="HKCU" Key="Software\MaviStudio\MaviSelect" Name="desktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="MaviSelect" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+  </Package>
+</Wix>
