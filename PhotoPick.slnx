@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="PhotoPick.Cli/PhotoPick.Cli.csproj" />
+  <Project Path="PhotoPick.Core/PhotoPick.Core.csproj" />
+  <Project Path="PhotoPick.Desktop/PhotoPick.Desktop.csproj" />
+  <Project Path="PhotoPick.Tests/PhotoPick.Tests.csproj" />
+</Solution>
