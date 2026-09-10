@@ -172,6 +172,8 @@ public partial class MainWindow : Window
     private async void BtnExport_Click(object sender, RoutedEventArgs e) => await ViewModel.ExportSelectedToFolderAsync();
     private void BtnHelp_Click(object sender, RoutedEventArgs e) => ViewModel.OpenHelpModal();
     private void BtnCloseHelp_Click(object sender, RoutedEventArgs e) => ViewModel.CloseHelpModal();
+    private void HelpModalBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => ViewModel.CloseHelpModal();
+    private void HelpModalCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
     #endregion
 

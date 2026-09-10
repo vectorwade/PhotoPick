@@ -1074,47 +1074,189 @@
         </Grid>
 
         <!-- ============================================================== -->
-        <!-- MODAL DE AJUDA & ATALHOS                                       -->
+        <!-- MODAL DE AJUDA & GUIA DE RECURSOS                              -->
         <!-- ============================================================== -->
         <Grid Grid.Row="1" Grid.RowSpan="2" Background="#B3000000"
+              MouseLeftButtonDown="HelpModalBackdrop_MouseLeftButtonDown"
               Visibility="{Binding IsHelpModalOpen, Converter={StaticResource BoolToVis}}">
             <Border Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                    CornerRadius="8" Padding="24" Width="600" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel>
-                    <DockPanel LastChildFill="True" Margin="0,0,0,16">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource CaptionBtn}" Click="BtnCloseHelp_Click" ToolTip="Fechar Ajuda">
-                            <TextBlock Text="✕" FontSize="12" Foreground="{DynamicResource TextMuted}"/>
+                    CornerRadius="8" Padding="24" Width="760" MaxHeight="680"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MouseLeftButtonDown="HelpModalCard_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabeçalho -->
+                    <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,16">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource CaptionBtn}" Click="BtnCloseHelp_Click" ToolTip="Fechar Ajuda [Esc]">
+                            <TextBlock Text="✕" FontSize="14" Foreground="{DynamicResource TextMuted}"/>
                         </Button>
-                        <TextBlock Text="Central de Ajuda &amp; Atalhos — Mavi Select" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        <StackPanel>
+                            <TextBlock Text="Central de Ajuda &amp; Guia de Recursos — Mavi Select" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+                            <TextBlock Text="Guia completo de conceitos, ferramentas de triagem, atalhos e fluxo de trabalho." FontSize="11.5" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0"/>
+                        </StackPanel>
                     </DockPanel>
 
-                    <TextBlock Text="O Mavi Select é uma ferramenta de triagem ultrarrápida desenhada para preparar suas seleções para o Adobe Lightroom Classic."
-                               FontSize="11.5" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,16" TextWrapping="Wrap"/>
-
-                    <!-- Lista de Atalhos -->
-                    <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,16">
+                    <!-- Conteúdo com Rolagem -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,16" Padding="0,0,8,0">
                         <StackPanel>
-                            <TextBlock Text="ATALHOS ESSENCIAIS DE TECLADO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
-                            <Grid Margin="0,3"><TextBlock Text="[P]" FontWeight="Bold" Foreground="#2ECC71"/><TextBlock Text="Marcar como Escolhida (Aura Verde)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[D]" FontWeight="Bold" Foreground="#F39C12"/><TextBlock Text="Marcar como Dúvida para Revisão (Aura Dourada)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[X]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Marcar como Rejeitada (Aura Vermelha)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[U]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Limpar classificação e notas" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[1 a 5]" FontWeight="Bold" Foreground="#F39C12"/><TextBlock Text="Atribuir classificação de estrelas" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[Del]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Excluir foto do computador (enviar para a Lixeira do Windows)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[Esc]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Fechar tela inicial ou modais e voltar à grade" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[F]" FontWeight="Bold" Foreground="#2ECC71"/><TextBlock Text="Ativar / Desativar Focus Peaking (Contorno Verde Neon)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[Z]" FontWeight="Bold" Foreground="#3498DB"/><TextBlock Text="Alternar Zoom 100% (Inspeção 1:1 de Pixels)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[Espaço]" FontWeight="Bold" Foreground="#FFFFFF"/><TextBlock Text="Alternar entre Grade e Visualização de Foto Única" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                            <Grid Margin="0,3"><TextBlock Text="[Setas]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Navegar entre as fotos na grade ou foto única" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
-                        </StackPanel>
-                    </Border>
+                            <!-- 1. O que é Rajada & Descarte Inteligente -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="#3A2C10" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="⚡" FontSize="14" Margin="0,0,8,0"/>
+                                        <TextBlock Text="O QUE É DISPARO EM RAJADA (BURST MODE) &amp; DESCARTE INTELIGENTE" FontSize="11" FontWeight="Bold" Foreground="#F39C12"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Quando você cobre momentos dinâmicos (como o beijo dos noivos, buquê, esportes ou expressões de crianças), a câmera dispara dezenas de fotos por segundo. Isso gera sequências quase idênticas."
+                                               FontSize="11.5" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                    <TextBlock Text="• Agrupamento Automático: O Mavi Select analisa os milissegundos dos metadados EXIF e identifica fotos da mesma rajada, exibindo o selo ⚡ Rajada."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Botão 'Manter Esta, Rejeitar o Resto da Rajada': Ao inspecionar a foto com o melhor foco e expressão da sequência, clique neste botão (ou no topo do modo Foto Única). Ele marca esta foto atual como Escolhida [P] e automaticamente REJEITA todas as outras da mesma rajada em um único clique, economizando dezenas de cliques manuais repetitivos!"
+                                               FontSize="11" Foreground="#F39C12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
 
-                    <!-- Fechar -->
-                    <Button Style="{StaticResource IdeToolBtn}" Background="#252525" Click="BtnCloseHelp_Click"
-                            HorizontalAlignment="Right" Padding="18,8">
-                        <TextBlock Text="Entendi, fechar ajuda" FontSize="11.5" Foreground="#FFFFFF"/>
-                    </Button>
-                </StackPanel>
+                            <!-- 2. Estados de Triagem -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="ESTADOS DE TRIAGEM (FLAGS DE SELEÇÃO)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,3">
+                                        <TextBlock Text="✔ Escolher [P]" FontWeight="Bold" Foreground="#2ECC71"/>
+                                        <TextBlock Text="Foto aprovada para entrega final ou edição. Recebe aura verde e classificação ativa." Margin="130,0,0,0" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                    <Grid Margin="0,3">
+                                        <TextBlock Text="❓ Dúvida [D]" FontWeight="Bold" Foreground="#F39C12"/>
+                                        <TextBlock Text="Foto para revisão posterior. Quando você fica em dúvida entre 2 ou 3 fotos parecidas e quer decidir depois com calma sem perder o ritmo da triagem." Margin="130,0,0,0" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                    <Grid Margin="0,3">
+                                        <TextBlock Text="✖ Rejeitar [X]" FontWeight="Bold" Foreground="#E74C3C"/>
+                                        <TextBlock Text="Foto descartada (olhos fechados, foco perdido, fotos repetidas). Recebe aura vermelha." Margin="130,0,0,0" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                    <Grid Margin="0,3">
+                                        <TextBlock Text="↺ Limpar [U]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="Remove qualquer flag e estrelas atribuídas, retornando a foto para o estado 'Não Avaliada'." Margin="130,0,0,0" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 3. Classificação por Estrelas -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="CLASSIFICAÇÃO POR ESTRELAS (1 A 5 ESTRELAS)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Atribua notas de 1 a 5 usando as teclas [1], [2], [3], [4], [5] ou clicando diretamente sobre as estrelas no painel Inspetor ou no cartão."
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Alternância (Toggle): Clicar na mesma estrela que a foto já possui (ex: clicar na 3ª estrela de uma foto com 3 estrelas) zera a nota. Você também pode pressionar [0] para remover a pontuação."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Compatibilidade: As notas de estrelas são gravadas diretamente no formato padrão XMP da Adobe, sendo lidas perfeitamente pelo Lightroom Classic."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 4. Inspeção de Foco e Zoom Inteligente -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="INSPEÇÃO DE FOCO, ZOOM INTELIGENTE &amp; NAVEGAÇÃO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Zoom no Ponto do Cursor [Tecla Z ou Clique na Foto]: Ao clicar sobre a foto no modo Foto Única, o zoom amplia 2.5x diretamente para onde a ponta do mouse está apontando, permitindo conferir a nitidez dos olhos instantaneamente."
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Arrastar (Pan): Com o zoom ativo, clique e arraste o mouse sobre a imagem para percorrer qualquer detalhe do enquadramento."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Tirar o Zoom (Ajustar à Tela): Dê um clique simples na foto ou clique nas barras pretas ao redor para desarmar o zoom imediatamente."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Navegação por Scroll nas Barras Pretas: Rolar a roda do mouse sobre as barras pretas laterais (ou quando a foto estiver sem zoom) avança e retrocede entre as fotos do ensaio com extrema agilidade."
+                                               FontSize="11" Foreground="#3498DB" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• 🎯 Focus Peaking [Tecla F]: Analisa o gradiente de contraste do sensor e desenha um contorno em verde neon exatamente nas bordas em foco crítico, permitindo saber se a foto cravou o foco sem sequer precisar dar zoom."
+                                               FontSize="11" Foreground="#2ECC71" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 5. Modos de Visualização e Filtros -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="MODOS DE VISUALIZAÇÃO, GRADE &amp; FILTROS" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Grade vs. Foto Única [Espaço ou Duplo Clique]: Alterne entre a visão panorâmica do ensaio e a inspeção minuciosa individual."
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Filtros de Status (Barra Lateral Esquerda): Isole com 1 clique apenas as fotos Escolhidas, Dúvidas, Rejeitadas ou Não Avaliadas."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Filtros de Formato: No topo da janela, selecione visualizar apenas formatos específicos (ex: apenas arquivos .CR3, .NEF, .ARW ou .JPG)."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Alternar Tema: Alterne entre o tema escuro e claro no botão de sol/lua no topo para adequar ao ambiente de iluminação do seu estúdio."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 6. Exclusão Segura -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="#3A1C1C" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="🗑️ EXCLUSÃO SEGURA DE FOTOS (LIXEIRA DO WINDOWS)" FontSize="10" FontWeight="Bold" Foreground="#E74C3C" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Pressione [Del] ou clique em '🗑️ Excluir Foto': O Mavi Select exibe um diálogo de confirmação seguro e move o arquivo original e o sidecar .xmp para a Lixeira do Windows."
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Recuperação Garantida: O arquivo NÃO é destruído permanentemente; se você excluir algo por engano, basta abrir a Lixeira do Windows e restaurar o arquivo."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 7. Integração Lightroom & Exportação -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="INTEGRAÇÃO COM ADOBE LIGHTROOM CLASSIC &amp; EXPORTAÇÃO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Sincronizar com Lightroom [Ctrl+S]: Grava todas as suas escolhas, dúvidas, rejeições e estrelas em arquivos sidecar padrão da indústria (.xmp). Ao abrir o catálogo no Lightroom, todas as fotos aparecem exatamente como você classificou."
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="• Exportar Selecionadas: Permite copiar ou mover apenas as fotos com flag 'Escolhida' para uma subpasta específica (ex: 'Selecionadas_Ensaio')."
+                                               FontSize="11" Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 8. Controle Gamepad (Xbox / XInput) -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="🎮 MODO GAMEPAD (JOYSTICK XBOX / XINPUT)" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="• Conecte qualquer controle compatível com XInput e faça a triagem confortavelmente recostado na cadeira:"
+                                               FontSize="11" Foreground="{DynamicResource TextNormal}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                    <Grid Margin="0,2"><TextBlock Text="Gatilhos LB / RB:" Foreground="{DynamicResource TextMuted}" FontSize="11"/><TextBlock Text="Avançar / Voltar Fotos" Margin="120,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,2"><TextBlock Text="Botão A (Verde):" Foreground="{DynamicResource TextMuted}" FontSize="11"/><TextBlock Text="Escolher Foto (Pick)" Margin="120,0,0,0" Foreground="#2ECC71" FontWeight="Bold"/></Grid>
+                                    <Grid Margin="0,2"><TextBlock Text="Botão B ou X:" Foreground="{DynamicResource TextMuted}" FontSize="11"/><TextBlock Text="Rejeitar Foto (Reject)" Margin="120,0,0,0" Foreground="#E74C3C" FontWeight="Bold"/></Grid>
+                                    <Grid Margin="0,2"><TextBlock Text="Botão Y:" Foreground="{DynamicResource TextMuted}" FontSize="11"/><TextBlock Text="Dúvida para Revisão" Margin="120,0,0,0" Foreground="#F39C12" FontWeight="Bold"/></Grid>
+                                    <Grid Margin="0,2"><TextBlock Text="Gatilho RT:" Foreground="{DynamicResource TextMuted}" FontSize="11"/><TextBlock Text="Alternar Zoom 100%" Margin="120,0,0,0" Foreground="#3498DB"/></Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 9. Tabela Completa de Atalhos de Teclado -->
+                            <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="TABELA COMPLETA DE ATALHOS DE TECLADO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,3"><TextBlock Text="[P]" FontWeight="Bold" Foreground="#2ECC71"/><TextBlock Text="Marcar como Escolhida (Pick / Aura Verde)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[D]" FontWeight="Bold" Foreground="#F39C12"/><TextBlock Text="Marcar como Dúvida para Revisão (Aura Dourada)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[X]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Marcar como Rejeitada (Reject / Aura Vermelha)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[U]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Limpar classificação e notas (Unflag)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[1 a 5]" FontWeight="Bold" Foreground="#F39C12"/><TextBlock Text="Atribuir classificação de 1 a 5 estrelas" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[0]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Remover classificação de estrelas (zera para 0)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Del]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Excluir foto (enviar para a Lixeira do Windows)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[F]" FontWeight="Bold" Foreground="#2ECC71"/><TextBlock Text="Ativar / Desativar Focus Peaking (Contorno Verde Neon)" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Z]" FontWeight="Bold" Foreground="#3498DB"/><TextBlock Text="Alternar Zoom 100% no cursor do mouse" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Espaço]" FontWeight="Bold" Foreground="#FFFFFF"/><TextBlock Text="Alternar entre Grade e Visualização de Foto Única" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Setas]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Navegar entre fotos na grade ou modo foto única" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Ctrl+O]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Abrir nova pasta de fotos" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Ctrl+S]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Sincronizar metadados XMP e abrir no Lightroom" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                    <Grid Margin="0,3"><TextBlock Text="[Esc]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Fechar esta tela de ajuda ou outros painéis sobrepostos" Margin="60,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Rodapé com Botão Fechar -->
+                    <DockPanel Grid.Row="2">
+                        <TextBlock Text="Dica: Você também pode fechar esta ajuda pressionando [Esc] ou clicando fora do cartão."
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource IdeToolBtn}" Background="#252525" Click="BtnCloseHelp_Click"
+                                HorizontalAlignment="Right" Padding="18,8">
+                            <TextBlock Text="Entendi, fechar ajuda [Esc]" FontSize="11.5" Foreground="#FFFFFF"/>
+                        </Button>
+                    </DockPanel>
+                </Grid>
             </Border>
         </Grid>
     </Grid>
