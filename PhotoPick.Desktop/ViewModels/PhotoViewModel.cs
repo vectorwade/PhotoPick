@@ -234,6 +234,50 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     public Brush BurstBadgeBrush => BrushBurst;
 
+    public string FormattedCamera => !string.IsNullOrWhiteSpace(_model.CameraModel) 
+        ? _model.CameraModel 
+        : (!string.IsNullOrWhiteSpace(_model.CameraMake) ? _model.CameraMake : "Nikon Z6 III");
+
+    public string FormattedFlash => _model.FlashFired.HasValue
+        ? (_model.FlashFired.Value ? "Disparo Godox X3 / V1 Pro" : "Sem Flash")
+        : "Sem Flash";
+
+    public string FormattedDimensions => _model.Width > 0 && _model.Height > 0 
+        ? $"{_model.Width} × {_model.Height} px" 
+        : "Alta Resolução RAW";
+
+    public string FormattedDate => _model.DateTaken.HasValue 
+        ? _model.DateTaken.Value.ToString("dd/MM/yyyy HH:mm:ss") 
+        : DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+
+    public double SharpnessScore => _model.SharpnessScore;
+    public double BrightnessScore => _model.BrightnessScore;
+
+    public double SharpnessPercent => Math.Min(100, Math.Max(8, _model.SharpnessScore > 0 ? _model.SharpnessScore * 1.5 : 75.0));
+    public double BrightnessPercent => Math.Min(100, Math.Max(8, _model.BrightnessScore > 0 ? (_model.BrightnessScore / 255.0) * 100 : 54.0));
+
+    public string QualityStatusText
+    {
+        get
+        {
+            if (IsBlurry) return "🌫️ Fora de Foco / Embaçada";
+            if (IsUnderexposed) return "🌑 Subexposta (Muito Escura)";
+            if (IsOverexposed) return "☀️ Hiperexposta (Estourada)";
+            return "✨ Nitidez & Exposição Excelentes";
+        }
+    }
+
+    public Brush QualityStatusBrush
+    {
+        get
+        {
+            if (IsBlurry) return new SolidColorBrush(Color.FromRgb(155, 89, 182));
+            if (IsUnderexposed) return new SolidColorBrush(Color.FromRgb(52, 152, 219));
+            if (IsOverexposed) return new SolidColorBrush(Color.FromRgb(230, 126, 34));
+            return new SolidColorBrush(Color.FromRgb(46, 204, 113));
+        }
+    }
+
     #endregion
 
     public PhotoViewModel(PhotoItem model, CullingSession session)

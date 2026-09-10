@@ -1,232 +1,298 @@
-﻿using System;
+using PhotoPick.Core.Services;
+using System;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using PhotoPick.Core.Services;
+using Microsoft.Win32;
+using PhotoPick.Core.Models;
+using PhotoPick.Desktop.Services;
 using PhotoPick.Desktop.ViewModels;
 
 namespace PhotoPick.Desktop;
 
 public partial class MainWindow : Window
 {
-    private MainViewModel ViewModel => (MainViewModel)DataContext;
+    public MainViewModel ViewModel => (MainViewModel)DataContext;
+    private readonly GamepadService _gamepadService;
 
     public MainWindow()
     {
         InitializeComponent();
+
+        // Inicializa o serviço de Gamepad (Joysticks XInput)
+        _gamepadService = new GamepadService();
+        _gamepadService.ActionTriggered += action => ViewModel.HandleGamepadAction(action);
+        _gamepadService.ConnectionChanged += connected => ViewModel.IsGamepadConnected = connected;
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        _gamepadService.Start();
+        if (DataContext is MainViewModel vm) vm.UpdateColumnsForWidth(GridScrollViewer?.ActualWidth ?? ActualWidth - 560);
+    }
+
+    private void Window_Closed(object sender, EventArgs e)
+    {
+        _gamepadService.Dispose();
     }
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (DataContext is MainViewModel vm)
-        {
-            vm.UpdateColumnsForWidth(e.NewSize.Width - 50);
-        }
+        // Área disponível para a grade = largura total menos os dois painéis laterais (250 + 300 = 550)
+        double available = (GridScrollViewer?.ActualWidth > 100)
+            ? GridScrollViewer.ActualWidth
+            : Math.Max(300, ActualWidth - 560);
+        if (DataContext is MainViewModel vm) vm.UpdateColumnsForWidth(available);
     }
 
-    #region Logo Home e Apresentação
+    #region Window Chrome (Min, Max, Close, Home)
+
+    private void BtnMinimize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void BtnMaximize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = (WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void BtnClose_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 
     private void LogoHome_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.ShowDashboard();
-    }
-
-    private void BtnDashboardReturn_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.HideDashboard();
+        // Alterna ou reabre a tela de boas-vindas / Novo Projeto
+        ViewModel.IsWelcomeScreenVisible = !ViewModel.IsWelcomeScreenVisible;
     }
 
     #endregion
 
-    #region Ajuda e Onboarding
+    #region Toolbar Ações
 
-    private void BtnHelp_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.OpenHelpModal();
-    }
-
-    private void BtnCloseHelp_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.CloseHelpModal();
-    }
+    private void BtnViewMode_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleViewMode();
+    private void BtnAutoAdvance_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleAutoAdvance();
+    private async void BtnLightroom_Click(object sender, RoutedEventArgs e) => await ViewModel.SyncAndOpenLightroomAsync();
+    private async void BtnExport_Click(object sender, RoutedEventArgs e) => await ViewModel.ExportSelectedToFolderAsync();
+    private void BtnHelp_Click(object sender, RoutedEventArgs e) => ViewModel.OpenHelpModal();
+    private void BtnCloseHelp_Click(object sender, RoutedEventArgs e) => ViewModel.CloseHelpModal();
 
     #endregion
 
-    #region Abertura de Pasta e Arquivos
+    #region Navegação Esquerda & Abertura de Pasta
 
     private async void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.HideDashboard();
-        await ViewModel.OpenFolderDialogAsync();
+        await PromptOpenFolderAsync();
     }
 
-    private async void BtnOpenPhotos_Click(object sender, RoutedEventArgs e)
+    private async void BtnWelcomeOpenFolder_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.HideDashboard();
-        await ViewModel.OpenPhotosDialogAsync();
+        await PromptOpenFolderAsync();
     }
 
-    private void BtnToggleView_Click(object sender, RoutedEventArgs e)
+    private void BtnWelcomeReturn_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.ToggleViewMode();
+        ViewModel.IsWelcomeScreenVisible = false;
     }
 
-    private async void BtnSyncLightroom_Click(object sender, RoutedEventArgs e)
+    private async Task PromptOpenFolderAsync()
     {
-        await ViewModel.SyncAndOpenLightroomAsync();
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Mavi Select — Selecionar Pasta de Fotos RAW",
+            InitialDirectory = ViewModel.Session.CurrentDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            await ViewModel.LoadDirectoryAsync(dialog.FolderName);
+            ViewModel.IsWelcomeScreenVisible = false;
+        }
     }
-
-    private async void BtnExportSelected_Click(object sender, RoutedEventArgs e)
-    {
-        await ViewModel.ExportSelectedToFolderAsync();
-    }
-
-    private void BtnAutoAdvance_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ToggleAutoAdvance();
-    }
-
-    private void BtnFocusPeaking_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ToggleFocusPeaking();
-    }
-
-    private async void ModalBtnSubfolder_Click(object sender, MouseButtonEventArgs e)
-    {
-        await ViewModel.SendToLightroomViaSubfolderAsync();
-    }
-
-    private async void ModalBtnInPlace_Click(object sender, MouseButtonEventArgs e)
-    {
-        await ViewModel.SendToLightroomInPlaceAsync();
-    }
-
-    private void ModalBtnCancel_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.CloseLightroomModal();
-    }
-
-    #endregion
-
-    #region Filtros de Qualidade, Status e Notas
 
     private void FilterAll_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.All);
-    private void FilterGood_Click(object sender, RoutedEventArgs e) => ViewModel.FilterGood();
-    private void FilterBlurry_Click(object sender, RoutedEventArgs e) => ViewModel.FilterBlurry();
-    private void FilterUnderexposed_Click(object sender, RoutedEventArgs e) => ViewModel.FilterUnderexposed();
-    private void FilterOverexposed_Click(object sender, RoutedEventArgs e) => ViewModel.FilterOverexposed();
-    private void FilterBurstStacks_Click(object sender, RoutedEventArgs e) => ViewModel.FilterBurstStacks();
-
     private void FilterPicked_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.PickedOnly);
     private void FilterRejected_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.RejectedOnly);
     private void FilterUnflagged_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.UnflaggedOnly);
 
-    private void FilterRating5_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating5);
-    private void FilterRating4_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating4);
-    private void FilterRating3_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating3);
-    private void FilterRating2_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating2);
-    private void FilterRating1_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating1);
-
     #endregion
 
-    #region Ações de Clique nos Cards de Foto
+    #region Interações no Card de Fotos (Grade)
 
     private void PhotoCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is PhotoViewModel photo)
+        if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
         {
             ViewModel.SelectedPhoto = photo;
+
             if (e.ClickCount == 2)
             {
-                ViewModel.IsSingleViewMode = true;
+                ViewModel.ToggleViewMode();
             }
         }
     }
 
     private void CardBtnPick_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is PhotoViewModel photo)
+        if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
         {
-            photo.TogglePick();
             ViewModel.SelectedPhoto = photo;
-            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
+            ViewModel.TogglePickSelected();
         }
     }
 
     private void CardBtnReject_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is PhotoViewModel photo)
+        if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
         {
-            photo.ToggleReject();
             ViewModel.SelectedPhoto = photo;
-            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
+            ViewModel.ToggleRejectSelected();
         }
     }
 
-    private void CardBtnClear_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe && fe.DataContext is PhotoViewModel photo)
-        {
-            photo.ClearMarks();
-            ViewModel.SelectedPhoto = photo;
-        }
-    }
+    private void Star1_Click(object sender, MouseButtonEventArgs e) => HandleCardStarClick(sender, 1);
+    private void Star2_Click(object sender, MouseButtonEventArgs e) => HandleCardStarClick(sender, 2);
+    private void Star3_Click(object sender, MouseButtonEventArgs e) => HandleCardStarClick(sender, 3);
+    private void Star4_Click(object sender, MouseButtonEventArgs e) => HandleCardStarClick(sender, 4);
+    private void Star5_Click(object sender, MouseButtonEventArgs e) => HandleCardStarClick(sender, 5);
 
-    private void CardStar1_Click(object sender, RoutedEventArgs e) => ClickCardStar(sender, 1);
-    private void CardStar2_Click(object sender, RoutedEventArgs e) => ClickCardStar(sender, 2);
-    private void CardStar3_Click(object sender, RoutedEventArgs e) => ClickCardStar(sender, 3);
-    private void CardStar4_Click(object sender, RoutedEventArgs e) => ClickCardStar(sender, 4);
-    private void CardStar5_Click(object sender, RoutedEventArgs e) => ClickCardStar(sender, 5);
-
-    private void ClickCardStar(object sender, int star)
+    private void HandleCardStarClick(object sender, int star)
     {
-        if (sender is FrameworkElement fe && fe.DataContext is PhotoViewModel photo)
+        if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
         {
-            photo.ClickStar(star);
             ViewModel.SelectedPhoto = photo;
-            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
+            ViewModel.RateSelected(star);
         }
     }
 
     #endregion
 
-    #region Ações no Modo Loupe (Foto Única)
+    #region Modo Loupe / Foto Única
 
-    private void LoupePick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
-    private void LoupeReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
-    private void LoupeClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
-    private void LoupeBtnBurstBest_Click(object sender, RoutedEventArgs e) => ViewModel.PickCurrentBurstBest();
+    private void LoupeImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ViewModel.ToggleViewMode();
+        }
+    }
 
-    private void LoupeStar1_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(1);
-    private void LoupeStar2_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(2);
-    private void LoupeStar3_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(3);
-    private void LoupeStar4_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(4);
-    private void LoupeStar5_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(5);
-
-    private void BtnPrevious_Click(object sender, RoutedEventArgs e) => ViewModel.PreviousPhoto();
-    private void BtnNext_Click(object sender, RoutedEventArgs e) => ViewModel.NextPhoto();
+    private void BtnFocusPeaking_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleFocusPeaking();
+    private void BtnPickBurstBest_Click(object sender, RoutedEventArgs e) => ViewModel.PickCurrentBurstBest();
+    private void BtnLoupePick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
+    private void BtnLoupeReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
+    private void BtnLoupeClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
 
     #endregion
 
-    #region Drag and Drop
+    #region Painel Direito: Inspetor Ações
 
-    private async void Window_Drop(object sender, DragEventArgs e)
+    private void InspectorStar1_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(1);
+    private void InspectorStar2_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(2);
+    private void InspectorStar3_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(3);
+    private void InspectorStar4_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(4);
+    private void InspectorStar5_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(5);
+
+    private void BtnInspectorPick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
+    private void BtnInspectorReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
+    private void BtnInspectorClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
+
+    #endregion
+
+    #region Atalhos de Teclado
+
+    private async void Window_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        if (ViewModel.IsHelpModalOpen)
         {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files.Length > 0)
+            if (e.Key is Key.Escape or Key.F1 or Key.H)
             {
-                string targetDir = Directory.Exists(files[0]) ? files[0] : Path.GetDirectoryName(files[0])!;
-                if (!string.IsNullOrEmpty(targetDir) && Directory.Exists(targetDir))
-                {
-                    ViewModel.HideDashboard();
-                    await ViewModel.LoadDirectoryAsync(targetDir);
-                }
+                ViewModel.CloseHelpModal();
+                e.Handled = true;
             }
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.F1 or Key.H:
+                ViewModel.OpenHelpModal();
+                e.Handled = true;
+                break;
+
+            case Key.P:
+                ViewModel.TogglePickSelected();
+                e.Handled = true;
+                break;
+
+            case Key.X:
+                ViewModel.ToggleRejectSelected();
+                e.Handled = true;
+                break;
+
+            case Key.U:
+                ViewModel.ClearSelected();
+                e.Handled = true;
+                break;
+
+            case Key.F:
+                ViewModel.ToggleFocusPeaking();
+                e.Handled = true;
+                break;
+
+            case Key.D1 or Key.NumPad1: ViewModel.RateSelected(1); e.Handled = true; break;
+            case Key.D2 or Key.NumPad2: ViewModel.RateSelected(2); e.Handled = true; break;
+            case Key.D3 or Key.NumPad3: ViewModel.RateSelected(3); e.Handled = true; break;
+            case Key.D4 or Key.NumPad4: ViewModel.RateSelected(4); e.Handled = true; break;
+            case Key.D5 or Key.NumPad5: ViewModel.RateSelected(5); e.Handled = true; break;
+            case Key.D0 or Key.NumPad0: ViewModel.RateSelected(0); e.Handled = true; break;
+
+            case Key.Right or Key.D:
+                ViewModel.NextPhoto();
+                e.Handled = true;
+                break;
+
+            case Key.Left or Key.A:
+                ViewModel.PreviousPhoto();
+                e.Handled = true;
+                break;
+
+            case Key.Up or Key.W:
+                ViewModel.NavigateGridUp();
+                e.Handled = true;
+                break;
+
+            case Key.Down or Key.S when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                ViewModel.NavigateGridDown();
+                e.Handled = true;
+                break;
+
+            case Key.Space or Key.Enter:
+                ViewModel.ToggleViewMode();
+                e.Handled = true;
+                break;
+
+            case Key.O when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                await PromptOpenFolderAsync();
+                e.Handled = true;
+                break;
+
+            case Key.S when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                await ViewModel.SyncAndOpenLightroomAsync();
+                e.Handled = true;
+                break;
         }
     }
+
+    #endregion
+
+    #region Drag and Drop de Pasta
 
     private void Window_DragOver(object sender, DragEventArgs e)
     {
@@ -237,114 +303,23 @@ public partial class MainWindow : Window
         }
     }
 
-    #endregion
-
-    #region Atalhos de Teclado Globais
-
-    private async void Window_KeyDown(object sender, KeyEventArgs e)
+    private async void Window_Drop(object sender, DragEventArgs e)
     {
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+        if (paths == null || paths.Length == 0) return;
+
+        string target = paths[0];
+        if (File.Exists(target))
         {
-            if (e.Key == Key.O)
-            {
-                e.Handled = true;
-                await ViewModel.OpenFolderDialogAsync();
-                return;
-            }
-            if (e.Key == Key.S)
-            {
-                e.Handled = true;
-                await ViewModel.SyncAndOpenLightroomAsync();
-                return;
-            }
+            target = Path.GetDirectoryName(target) ?? target;
         }
 
-        switch (e.Key)
+        if (Directory.Exists(target))
         {
-            case Key.Space or Key.Enter:
-                e.Handled = true;
-                ViewModel.ToggleViewMode();
-                break;
-
-            case Key.P:
-                e.Handled = true;
-                ViewModel.TogglePickSelected();
-                break;
-
-            case Key.X:
-                e.Handled = true;
-                ViewModel.ToggleRejectSelected();
-                break;
-
-            case Key.U:
-                e.Handled = true;
-                ViewModel.ClearSelected();
-                break;
-
-            case Key.F:
-                e.Handled = true;
-                ViewModel.ToggleFocusPeaking();
-                break;
-
-            case Key.F1 or Key.H:
-                e.Handled = true;
-                ViewModel.OpenHelpModal();
-                break;
-
-            case Key.D1 or Key.NumPad1:
-                e.Handled = true;
-                ViewModel.RateSelected(1);
-                break;
-            case Key.D2 or Key.NumPad2:
-                e.Handled = true;
-                ViewModel.RateSelected(2);
-                break;
-            case Key.D3 or Key.NumPad3:
-                e.Handled = true;
-                ViewModel.RateSelected(3);
-                break;
-            case Key.D4 or Key.NumPad4:
-                e.Handled = true;
-                ViewModel.RateSelected(4);
-                break;
-            case Key.D5 or Key.NumPad5:
-                e.Handled = true;
-                ViewModel.RateSelected(5);
-                break;
-            case Key.D0 or Key.NumPad0:
-                e.Handled = true;
-                ViewModel.RateSelected(0);
-                break;
-
-            case Key.Right or Key.D or Key.K:
-                e.Handled = true;
-                ViewModel.NextPhoto();
-                break;
-
-            case Key.Left or Key.A or Key.J:
-                e.Handled = true;
-                ViewModel.PreviousPhoto();
-                break;
-
-            case Key.Escape:
-                e.Handled = true;
-                if (ViewModel.IsHelpModalOpen)
-                {
-                    ViewModel.CloseHelpModal();
-                }
-                else if (ViewModel.IsLightroomModalOpen)
-                {
-                    ViewModel.CloseLightroomModal();
-                }
-                else if (ViewModel.IsDashboardVisible && ViewModel.Photos.Count > 0)
-                {
-                    ViewModel.HideDashboard();
-                }
-                else if (ViewModel.IsSingleViewMode)
-                {
-                    ViewModel.IsSingleViewMode = false;
-                }
-                break;
+            await ViewModel.LoadDirectoryAsync(target);
+            ViewModel.IsWelcomeScreenVisible = false;
         }
     }
 

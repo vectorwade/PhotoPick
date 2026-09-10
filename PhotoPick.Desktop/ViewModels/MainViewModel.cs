@@ -29,7 +29,7 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _isSavingXmp;
     private bool _isExporting;
     private bool _isSingleViewMode;
-    private bool _isDashboardVisible;
+    private bool _isDashboardVisible = true;
     private bool _isAutoAdvanceEnabled = true;
     private bool _isFocusPeakingActive;
     private bool _isHelpModalOpen;
@@ -43,9 +43,52 @@ public class MainViewModel : INotifyPropertyChanged
     public CullingSession Session => _session;
     public ObservableCollection<PhotoViewModel> Photos { get; } = [];
     public ObservableCollection<PhotoRowViewModel> Rows { get; } = [];
-    public ObservableCollection<string> CameraList { get; } = ["Todas as Câmeras"];
+    public ObservableCollection<string> CameraList { get; } = ["Todas as Câmeras", "Nikon Z6 III", "Canon EOS Rebel T6i", "Sony ILCE-7M4"];
 
     public string WindowTitle => "Mavi Select";
+
+    public bool IsWelcomeScreenVisible
+    {
+        get => _isDashboardVisible;
+        set => IsDashboardVisible = value;
+    }
+
+    public ObservableCollection<string> RecentFolders { get; } = [];
+    public ObservableCollection<string> FlashList { get; } = ["Todos os Disparos", "Disparo Godox X3 / V1 Pro", "Sem Flash"];
+
+    public string CurrentDirectoryName => !string.IsNullOrEmpty(_session.CurrentDirectory) 
+        ? Path.GetFileName(_session.CurrentDirectory) 
+        : "Nenhuma pasta aberta";
+
+    public string CurrentDirectoryPath => _session.CurrentDirectory ?? "Selecione uma pasta para começar";
+
+    private bool _isGamepadConnected;
+    public bool IsGamepadConnected
+    {
+        get => _isGamepadConnected;
+        set
+        {
+            if (_isGamepadConnected != value)
+            {
+                _isGamepadConnected = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GamepadStatusText));
+            }
+        }
+    }
+
+    public string GamepadStatusText => IsGamepadConnected ? "🎮 Gamepad Conectado" : "🎮 Nenhum Gamepad";
+
+    public bool HasSelectedPhoto => SelectedPhoto != null;
+    public string SelectedPhotoName => SelectedPhoto?.FileName ?? "Nenhuma foto selecionada";
+    public string SelectedPhotoCamera => SelectedPhoto?.FormattedCamera ?? "-";
+    public string SelectedPhotoFlash => SelectedPhoto?.FormattedFlash ?? "-";
+    public string SelectedPhotoDimensions => SelectedPhoto?.FormattedDimensions ?? "-";
+    public string SelectedPhotoDate => SelectedPhoto?.FormattedDate ?? "-";
+    public double SelectedPhotoSharpnessPercent => SelectedPhoto?.SharpnessPercent ?? 0;
+    public double SelectedPhotoBrightnessPercent => SelectedPhoto?.BrightnessPercent ?? 0;
+    public string SelectedPhotoQualityText => SelectedPhoto?.QualityStatusText ?? "-";
+    public Brush SelectedPhotoQualityBrush => SelectedPhoto?.QualityStatusBrush ?? Brushes.Transparent;
 
     public bool IsDashboardVisible
     {
@@ -195,6 +238,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool IsGridViewMode => !IsSingleViewMode;
 
+    public void SelectPhoto(PhotoViewModel? p) => SelectedPhoto = p;
     public PhotoViewModel? SelectedPhoto
     {
         get => _selectedPhoto;
@@ -205,6 +249,16 @@ public class MainViewModel : INotifyPropertyChanged
                 _selectedPhoto = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasSelection));
+                OnPropertyChanged(nameof(HasSelectedPhoto));
+                OnPropertyChanged(nameof(SelectedPhotoName));
+                OnPropertyChanged(nameof(SelectedPhotoCamera));
+                OnPropertyChanged(nameof(SelectedPhotoFlash));
+                OnPropertyChanged(nameof(SelectedPhotoDimensions));
+                OnPropertyChanged(nameof(SelectedPhotoDate));
+                OnPropertyChanged(nameof(SelectedPhotoSharpnessPercent));
+                OnPropertyChanged(nameof(SelectedPhotoBrightnessPercent));
+                OnPropertyChanged(nameof(SelectedPhotoQualityText));
+                OnPropertyChanged(nameof(SelectedPhotoQualityBrush));
                 if (IsSingleViewMode && _selectedPhoto != null)
                 {
                     _ = LoadLoupeImageAsync(_selectedPhoto);
@@ -314,6 +368,8 @@ public class MainViewModel : INotifyPropertyChanged
             if (Photos.Count > 0)
             {
                 SelectedPhoto = Photos[0];
+                IsDashboardVisible = false;
+                if (!RecentFolders.Contains(directoryPath)) { RecentFolders.Insert(0, directoryPath); }
             }
 
             // Inicia fila de carregamento de thumbnails em background controlado
@@ -550,6 +606,52 @@ public class MainViewModel : INotifyPropertyChanged
         {
             SelectedPhoto = Photos[idx + 1];
         }
+    }
+
+    public void HandleGamepadAction(GamepadAction action)
+    {
+        switch (action)
+        {
+            case GamepadAction.PreviousPhoto:
+            case GamepadAction.NavigateLeft:
+                PreviousPhoto();
+                break;
+            case GamepadAction.NextPhoto:
+            case GamepadAction.NavigateRight:
+                NextPhoto();
+                break;
+            case GamepadAction.Pick:
+                TogglePickSelected();
+                break;
+            case GamepadAction.Reject:
+                ToggleRejectSelected();
+                break;
+            case GamepadAction.ToggleFocusPeaking:
+                ToggleFocusPeaking();
+                break;
+            case GamepadAction.NavigateUp:
+                NavigateGridUp();
+                break;
+            case GamepadAction.NavigateDown:
+                NavigateGridDown();
+                break;
+        }
+    }
+
+    public void NavigateGridUp()
+    {
+        if (SelectedPhoto == null || Photos.Count == 0) return;
+        int idx = Photos.IndexOf(SelectedPhoto);
+        int target = Math.Max(0, idx - _columnsPerRow);
+        SelectedPhoto = Photos[target];
+    }
+
+    public void NavigateGridDown()
+    {
+        if (SelectedPhoto == null || Photos.Count == 0) return;
+        int idx = Photos.IndexOf(SelectedPhoto);
+        int target = Math.Min(Photos.Count - 1, idx + _columnsPerRow);
+        SelectedPhoto = Photos[target];
     }
 
     public void PreviousPhoto()
@@ -790,6 +892,8 @@ public class MainViewModel : INotifyPropertyChanged
     private void RefreshStats()
     {
         OnPropertyChanged(nameof(CurrentDirectory));
+        OnPropertyChanged(nameof(CurrentDirectoryName));
+        OnPropertyChanged(nameof(CurrentDirectoryPath));
         OnPropertyChanged(nameof(TotalCount));
         OnPropertyChanged(nameof(PickedCount));
         OnPropertyChanged(nameof(RejectedCount));
