@@ -177,7 +177,7 @@ public class ThumbnailLoaderQueue
         {
             var options = new ParallelOptions
             {
-                MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 4, 8),
+                MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount / 2, 2, 4),
                 CancellationToken = _cts?.Token ?? CancellationToken.None
             };
 

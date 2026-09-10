@@ -42,17 +42,22 @@ public partial class MainWindow : Window
 
     private void OnPhotoSelected(PhotoViewModel photo)
     {
+        if (ViewModel == null || ViewModel.IsLoadingFolder) return;
         Dispatcher.InvokeAsync(() =>
         {
-            if (ViewModel.Rows.Count > 0 && GridScrollViewer != null)
+            try
             {
-                var row = ViewModel.Rows.FirstOrDefault(r => r.Columns.Contains(photo));
-                if (row != null)
+                if (ViewModel.Rows.Count > 0 && GridScrollViewer != null)
                 {
-                    GridScrollViewer.ScrollIntoView(row);
+                    var row = ViewModel.Rows.FirstOrDefault(r => r.Columns.Contains(photo));
+                    if (row != null)
+                    {
+                        GridScrollViewer.ScrollIntoView(row);
+                    }
                 }
             }
-        });
+            catch { }
+        }, System.Windows.Threading.DispatcherPriority.Background);
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -96,13 +101,31 @@ public partial class MainWindow : Window
         _gamepadService.Dispose();
     }
 
+    private double _lastAvailableWidth = 0;
+    private bool _isUpdatingColumns = false;
+
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        // Área disponível para a grade = largura total menos os dois painéis laterais (250 + 300 = 550)
+        if (_isUpdatingColumns) return;
+        if (DataContext is not MainViewModel vm) return;
+
         double available = (GridScrollViewer?.ActualWidth > 100)
             ? GridScrollViewer.ActualWidth
             : Math.Max(300, ActualWidth - 560);
-        if (DataContext is MainViewModel vm) vm.UpdateColumnsForWidth(available);
+
+        if (Math.Abs(available - _lastAvailableWidth) < 20) return;
+        _lastAvailableWidth = available;
+
+        try
+        {
+            _isUpdatingColumns = true;
+            vm.UpdateColumnsForWidth(available);
+        }
+        catch { }
+        finally
+        {
+            _isUpdatingColumns = false;
+        }
     }
 
     #region Window Chrome (Min, Max, Close, Home)
@@ -239,63 +262,106 @@ public partial class MainWindow : Window
         await PromptSelectFolderOnlyAsync();
     }
 
+    private string GetSafeInitialDirectory()
+    {
+        try
+        {
+            string? current = ViewModel?.Session?.CurrentDirectory;
+            if (!string.IsNullOrWhiteSpace(current) && Directory.Exists(current))
+            {
+                return current;
+            }
+            string pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            if (Directory.Exists(pictures))
+            {
+                return pictures;
+            }
+            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+        catch
+        {
+            return AppDomain.CurrentDomain.BaseDirectory;
+        }
+    }
+
     private async Task PromptOpenFolderAsync()
     {
-        // Usa OpenFileDialog com multiselect para que o Windows EXIBA todas as fotos e suas miniaturas!
-        // No OpenFolderDialog tradicional, o Windows esconde todos os arquivos e exibe apenas pastas.
-        var dialog = new OpenFileDialog
+        try
         {
-            Title = "Mavi Select — Selecione qualquer foto para abrir a pasta correspondente (Miniaturas Visíveis)",
-            Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os Arquivos (*.*)|*.*",
-            Multiselect = true,
-            InitialDirectory = ViewModel.Session.CurrentDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
-        };
-
-        if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
-        {
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
-
-            string? dir = Path.GetDirectoryName(dialog.FileNames[0]);
-            if (!string.IsNullOrEmpty(dir) && ViewModel != null)
+            var dialog = new OpenFileDialog
             {
-                await ViewModel.LoadDirectoryAsync(dir);
+                Title = "Mavi Select — Selecionar Fotos",
+                Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os Arquivos (*.*)|*.*",
+                Multiselect = true,
+                InitialDirectory = GetSafeInitialDirectory()
+            };
 
-                // Foca imediatamente na foto selecionada no diálogo
-                string selectedFile = Path.GetFileName(dialog.FileNames[0]);
-                var match = ViewModel.Photos.FirstOrDefault(p => string.Equals(p.FileName, selectedFile, StringComparison.OrdinalIgnoreCase));
-                if (match != null)
+            bool? result = dialog.ShowDialog(this);
+            if (result == true && dialog.FileNames.Length > 0)
+            {
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+                string? dir = Path.GetDirectoryName(dialog.FileNames[0]);
+                if (!string.IsNullOrEmpty(dir) && ViewModel != null)
                 {
-                    ViewModel.SelectedPhoto = match;
+                    await ViewModel.LoadDirectoryAsync(dir);
+
+                    string selectedFile = Path.GetFileName(dialog.FileNames[0]);
+                    var match = ViewModel.Photos.FirstOrDefault(p => string.Equals(p.FileName, selectedFile, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                    {
+                        ViewModel.SelectedPhoto = match;
+                    }
+
+                    ViewModel.IsWelcomeScreenVisible = false;
                 }
 
-                ViewModel.IsWelcomeScreenVisible = false;
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
             }
-
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Não foi possível abrir o seletor de fotos: {ex.Message}",
+                "Aviso — Mavi Select",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 
     private async Task PromptSelectFolderOnlyAsync()
     {
-        var dialog = new OpenFolderDialog
+        try
         {
-            Title = "Mavi Select — Selecionar Pasta de Fotos RAW",
-            InitialDirectory = ViewModel.Session.CurrentDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
-        };
-
-        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
-        {
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
-
-            if (ViewModel != null)
+            var dialog = new OpenFolderDialog
             {
-                await ViewModel.LoadDirectoryAsync(dialog.FolderName);
-                ViewModel.IsWelcomeScreenVisible = false;
-            }
+                Title = "Mavi Select — Selecionar Pasta com Fotos",
+                InitialDirectory = GetSafeInitialDirectory()
+            };
 
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            bool? result = dialog.ShowDialog(this);
+            if (result == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+            {
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+                if (ViewModel != null)
+                {
+                    await ViewModel.LoadDirectoryAsync(dialog.FolderName);
+                    ViewModel.IsWelcomeScreenVisible = false;
+                }
+
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Não foi possível abrir a pasta selecionada: {ex.Message}",
+                "Aviso — Mavi Select",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 

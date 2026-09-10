@@ -804,20 +804,16 @@ public class MainViewModel : INotifyPropertyChanged
         try
         {
             int count = await _session.LoadDirectoryAsync(directoryPath);
+            _loaderQueue.Start();
             RebuildViewModels();
             RebuildFormatList();
             StatusMessage = $"{count} fotos carregadas. Use os botões ou atalhos: [P] Escolher, [X] Rejeitar, [D] Dúvida, [U] Limpar, [1-5] Notas.";
 
             if (Photos.Count > 0)
             {
-                SelectedPhoto = Photos[0];
                 IsDashboardVisible = false;
                 if (!RecentFolders.Contains(directoryPath)) { RecentFolders.Insert(0, directoryPath); }
             }
-
-            // Dispara extração imediata dos previews visíveis na grade e enfileira o restante
-            _loaderQueue.Start();
-            _loaderQueue.PrioritizeAndEnqueue(Photos);
         }
         catch (Exception ex)
         {

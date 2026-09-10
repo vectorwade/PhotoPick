@@ -17,7 +17,8 @@ public class PhotoViewModel : INotifyPropertyChanged
     private readonly PhotoItem _model;
     private readonly CullingSession _session;
     private ImageSource? _thumbnail;
-    private bool _isLoading;
+    private bool _isLoading;
+    private bool _isApplyingMetadata;
 
     public PhotoItem Model => _model;
     public string FilePath => _model.FilePath;
@@ -440,6 +441,7 @@ public class PhotoViewModel : INotifyPropertyChanged
 
         _model.PropertyChanged += (s, e) =>
         {
+            if (_isApplyingMetadata) return;
             OnPropertyChanged(e.PropertyName);
             if (e.PropertyName is nameof(PhotoItem.Rating) or nameof(PhotoItem.ColorLabel))
             {
@@ -486,27 +488,35 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     public void ApplyMetadata(RawPreviewResult res)
     {
-        _model.Orientation = res.Orientation;
-        if (res.Width > 0) _model.Width = res.Width;
-        if (res.Height > 0) _model.Height = res.Height;
-        if (!string.IsNullOrEmpty(res.CameraModel)) _model.CameraModel = res.CameraModel;
-        if (!string.IsNullOrEmpty(res.CameraMake)) _model.CameraMake = res.CameraMake;
-        if (!string.IsNullOrEmpty(res.LensModel)) _model.LensModel = res.LensModel;
-        if (res.Iso.HasValue) _model.Iso = res.Iso;
-        if (res.FNumber.HasValue) _model.FNumber = res.FNumber;
-        if (res.ExposureTime.HasValue) _model.ExposureTime = res.ExposureTime;
-        if (res.FocalLength.HasValue) _model.FocalLength = res.FocalLength;
-        if (res.ExposureBias.HasValue) _model.ExposureBias = res.ExposureBias;
-        if (res.FlashFired.HasValue) _model.FlashFired = res.FlashFired;
-        if (res.DateTaken.HasValue) _model.DateTaken ??= res.DateTaken;
-        if (res.FocalLength35mm.HasValue) _model.FocalLength35mm = res.FocalLength35mm;
-        if (res.MaxAperture.HasValue) _model.MaxAperture = res.MaxAperture;
-        if (!string.IsNullOrEmpty(res.MeteringMode)) _model.MeteringMode = res.MeteringMode;
-        if (!string.IsNullOrEmpty(res.ExposureProgram)) _model.ExposureProgram = res.ExposureProgram;
-        if (!string.IsNullOrEmpty(res.ExposureMode)) _model.ExposureMode = res.ExposureMode;
-        if (!string.IsNullOrEmpty(res.WhiteBalance)) _model.WhiteBalance = res.WhiteBalance;
-        if (!string.IsNullOrEmpty(res.Software)) _model.Software = res.Software;
-        if (!string.IsNullOrEmpty(res.SerialNumber)) _model.SerialNumber = res.SerialNumber;
+        _isApplyingMetadata = true;
+        try
+        {
+            _model.Orientation = res.Orientation;
+            if (res.Width > 0) _model.Width = res.Width;
+            if (res.Height > 0) _model.Height = res.Height;
+            if (!string.IsNullOrEmpty(res.CameraModel)) _model.CameraModel = res.CameraModel;
+            if (!string.IsNullOrEmpty(res.CameraMake)) _model.CameraMake = res.CameraMake;
+            if (!string.IsNullOrEmpty(res.LensModel)) _model.LensModel = res.LensModel;
+            if (res.Iso.HasValue) _model.Iso = res.Iso;
+            if (res.FNumber.HasValue) _model.FNumber = res.FNumber;
+            if (res.ExposureTime.HasValue) _model.ExposureTime = res.ExposureTime;
+            if (res.FocalLength.HasValue) _model.FocalLength = res.FocalLength;
+            if (res.ExposureBias.HasValue) _model.ExposureBias = res.ExposureBias;
+            if (res.FlashFired.HasValue) _model.FlashFired = res.FlashFired;
+            if (res.DateTaken.HasValue) _model.DateTaken ??= res.DateTaken;
+            if (res.FocalLength35mm.HasValue) _model.FocalLength35mm = res.FocalLength35mm;
+            if (res.MaxAperture.HasValue) _model.MaxAperture = res.MaxAperture;
+            if (!string.IsNullOrEmpty(res.MeteringMode)) _model.MeteringMode = res.MeteringMode;
+            if (!string.IsNullOrEmpty(res.ExposureProgram)) _model.ExposureProgram = res.ExposureProgram;
+            if (!string.IsNullOrEmpty(res.ExposureMode)) _model.ExposureMode = res.ExposureMode;
+            if (!string.IsNullOrEmpty(res.WhiteBalance)) _model.WhiteBalance = res.WhiteBalance;
+            if (!string.IsNullOrEmpty(res.Software)) _model.Software = res.Software;
+            if (!string.IsNullOrEmpty(res.SerialNumber)) _model.SerialNumber = res.SerialNumber;
+        }
+        finally
+        {
+            _isApplyingMetadata = false;
+        }
 
         OnPropertyChanged(nameof(CameraModel));
         OnPropertyChanged(nameof(CameraMake));
