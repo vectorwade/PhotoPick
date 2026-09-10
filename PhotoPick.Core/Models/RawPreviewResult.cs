@@ -17,6 +17,13 @@ public class RawPreviewResult
     public bool? FlashFired { get; init; }
     public DateTime? DateTaken { get; init; }
 
+    public string? LensModel { get; init; }
+    public int? Iso { get; init; }
+    public double? FNumber { get; init; }
+    public double? ExposureTime { get; init; }
+    public double? FocalLength { get; init; }
+    public double? ExposureBias { get; init; }
+
     public static RawPreviewResult Fail(string error, double elapsedMs = 0) => new()
     {
         Success = false,
@@ -33,7 +40,13 @@ public class RawPreviewResult
         string? cameraModel = null,
         string? cameraMake = null,
         bool? flashFired = null,
-        DateTime? dateTaken = null) => new()
+        DateTime? dateTaken = null,
+        string? lensModel = null,
+        int? iso = null,
+        double? fNumber = null,
+        double? exposureTime = null,
+        double? focalLength = null,
+        double? exposureBias = null) => new()
     {
         Success = true,
         JpegBytes = jpegBytes,
@@ -44,6 +57,12 @@ public class RawPreviewResult
         CameraModel = cameraModel,
         CameraMake = cameraMake,
         FlashFired = flashFired,
-        DateTaken = dateTaken
+        DateTaken = dateTaken,
+        LensModel = lensModel,
+        Iso = iso,
+        FNumber = fNumber,
+        ExposureTime = exposureTime,
+        FocalLength = focalLength,
+        ExposureBias = exposureBias
     };
 }

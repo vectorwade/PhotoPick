@@ -134,4 +134,18 @@ public class RawPreviewExtractorTests : IDisposable
         // Write JPEG bytes
         bw.Write(jpegData);
     }
+
+    [Fact]
+    public void ExtractPreview_RealDjiDng_IfPresent_ExtractsSuccessfully()
+    {
+        string path = @"H:\DCIM\DJI_001\DJI_20260805151722_0305_D.DNG";
+        if (!File.Exists(path)) return;
+
+        var res = _extractor.ExtractPreview(path);
+        Assert.True(res.Success, res.ErrorMessage);
+        Assert.NotNull(res.JpegBytes);
+        Assert.True(res.JpegBytes.Length > 10000);
+        Assert.NotNull(res.CameraModel);
+        Assert.Contains("DJI", res.CameraModel);
+    }
 }

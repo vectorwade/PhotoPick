@@ -190,8 +190,12 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasSelectedPhoto => SelectedPhoto != null;
     public string SelectedPhotoName => SelectedPhoto?.FileName ?? "Nenhuma foto selecionada";
     public string SelectedPhotoCamera => SelectedPhoto?.FormattedCamera ?? "-";
+    public string SelectedPhotoLens => SelectedPhoto?.FormattedLens ?? "-";
+    public string SelectedPhotoExposure => SelectedPhoto?.FormattedExposureLine ?? "-";
+    public string SelectedPhotoFocalLength => SelectedPhoto?.FormattedFocalLength ?? "-";
     public string SelectedPhotoFlash => SelectedPhoto?.FormattedFlash ?? "-";
-    public string SelectedPhotoDimensions => SelectedPhoto?.FormattedDimensions ?? "-";
+    public string SelectedPhotoDimensions => SelectedPhoto?.FormattedMegapixels ?? "-";
+    public string SelectedPhotoFileInfo => SelectedPhoto?.FormattedFileInfo ?? "-";
     public string SelectedPhotoDate => SelectedPhoto?.FormattedDate ?? "-";
     public double SelectedPhotoSharpnessPercent => SelectedPhoto?.SharpnessPercent ?? 0;
     public double SelectedPhotoBrightnessPercent => SelectedPhoto?.BrightnessPercent ?? 0;
@@ -362,17 +366,29 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (_selectedPhoto != value)
             {
-                if (_selectedPhoto != null) _selectedPhoto.IsSelected = false;
+                if (_selectedPhoto != null)
+                {
+                    _selectedPhoto.IsSelected = false;
+                    _selectedPhoto.PropertyChanged -= SelectedPhoto_PropertyChanged;
+                }
                 _selectedPhoto = value;
-                if (_selectedPhoto != null) _selectedPhoto.IsSelected = true;
+                if (_selectedPhoto != null)
+                {
+                    _selectedPhoto.IsSelected = true;
+                    _selectedPhoto.PropertyChanged += SelectedPhoto_PropertyChanged;
+                }
 
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(HasSelectedPhoto));
                 OnPropertyChanged(nameof(SelectedPhotoName));
                 OnPropertyChanged(nameof(SelectedPhotoCamera));
+                OnPropertyChanged(nameof(SelectedPhotoLens));
+                OnPropertyChanged(nameof(SelectedPhotoExposure));
+                OnPropertyChanged(nameof(SelectedPhotoFocalLength));
                 OnPropertyChanged(nameof(SelectedPhotoFlash));
                 OnPropertyChanged(nameof(SelectedPhotoDimensions));
+                OnPropertyChanged(nameof(SelectedPhotoFileInfo));
                 OnPropertyChanged(nameof(SelectedPhotoDate));
                 OnPropertyChanged(nameof(SelectedPhotoSharpnessPercent));
                 OnPropertyChanged(nameof(SelectedPhotoBrightnessPercent));
@@ -394,6 +410,23 @@ public class MainViewModel : INotifyPropertyChanged
                 }
             }
         }
+    }
+
+    private void SelectedPhoto_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(SelectedPhotoName));
+        OnPropertyChanged(nameof(SelectedPhotoCamera));
+        OnPropertyChanged(nameof(SelectedPhotoLens));
+        OnPropertyChanged(nameof(SelectedPhotoExposure));
+        OnPropertyChanged(nameof(SelectedPhotoFocalLength));
+        OnPropertyChanged(nameof(SelectedPhotoFlash));
+        OnPropertyChanged(nameof(SelectedPhotoDimensions));
+        OnPropertyChanged(nameof(SelectedPhotoFileInfo));
+        OnPropertyChanged(nameof(SelectedPhotoDate));
+        OnPropertyChanged(nameof(SelectedPhotoSharpnessPercent));
+        OnPropertyChanged(nameof(SelectedPhotoBrightnessPercent));
+        OnPropertyChanged(nameof(SelectedPhotoQualityText));
+        OnPropertyChanged(nameof(SelectedPhotoQualityBrush));
     }
 
     public bool HasSelection => SelectedPhoto != null;

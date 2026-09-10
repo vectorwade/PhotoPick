@@ -839,22 +839,55 @@
                                 <!-- Nome do Arquivo -->
                                 <TextBlock Text="{Binding SelectedPhotoName, Mode=OneWay}"
                                            FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"
-                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,2"/>
-                                <TextBlock Text="{Binding SelectedPhotoDimensions, Mode=OneWay}"
-                                           FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+                                           TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
 
-                                <!-- Grade de Metadados EXIF -->
-                                <Border Background="#1A1A1A" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,8">
+                                <!-- Grade de Metadados EXIF e Disparo Completa -->
+                                <Border Background="#1A1A1A" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,8">
                                     <StackPanel>
-                                        <Grid Margin="0,2">
+                                        <!-- Câmera -->
+                                        <Grid Margin="0,2.5">
                                             <TextBlock Text="Câmera:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
-                                            <TextBlock Text="{Binding SelectedPhotoCamera, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoCamera, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}" MaxWidth="170" TextTrimming="CharacterEllipsis" TextAlignment="Right"/>
                                         </Grid>
-                                        <Grid Margin="0,2">
+
+                                        <!-- Lente -->
+                                        <Grid Margin="0,2.5">
+                                            <TextBlock Text="Lente:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoLens, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}" MaxWidth="170" TextTrimming="CharacterEllipsis" TextAlignment="Right"/>
+                                        </Grid>
+
+                                        <!-- Exposição (Obturador • Abertura • ISO) -->
+                                        <Grid Margin="0,2.5">
+                                            <TextBlock Text="Exposição:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoExposure, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="Bold" Foreground="#3498DB"/>
+                                        </Grid>
+
+                                        <!-- Distância Focal -->
+                                        <Grid Margin="0,2.5">
+                                            <TextBlock Text="Dist. Focal:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoFocalLength, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}"/>
+                                        </Grid>
+
+                                        <!-- Flash -->
+                                        <Grid Margin="0,2.5">
                                             <TextBlock Text="Flash:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
                                             <TextBlock Text="{Binding SelectedPhotoFlash, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}"/>
                                         </Grid>
-                                        <Grid Margin="0,2">
+
+                                        <!-- Resolução / Megapixels -->
+                                        <Grid Margin="0,2.5">
+                                            <TextBlock Text="Resolução:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoDimensions, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" Foreground="{DynamicResource TextNormal}"/>
+                                        </Grid>
+
+                                        <!-- Arquivo e Tamanho -->
+                                        <Grid Margin="0,2.5">
+                                            <TextBlock Text="Arquivo:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                            <TextBlock Text="{Binding SelectedPhotoFileInfo, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
+                                        </Grid>
+
+                                        <!-- Data / Hora -->
+                                        <Grid Margin="0,2.5">
                                             <TextBlock Text="Data / Hora:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
                                             <TextBlock Text="{Binding SelectedPhotoDate, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
                                         </Grid>
