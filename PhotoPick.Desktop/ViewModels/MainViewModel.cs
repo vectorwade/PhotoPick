@@ -175,11 +175,17 @@ public class MainViewModel : INotifyPropertyChanged
                 _isGamepadConnected = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(GamepadStatusText));
+                OnPropertyChanged(nameof(GamepadToolTip));
+                OnPropertyChanged(nameof(GamepadIconBrush));
+                OnPropertyChanged(nameof(GamepadIconOpacity));
             }
         }
     }
 
     public string GamepadStatusText => IsGamepadConnected ? "🎮 Gamepad Conectado" : "🎮 Nenhum Gamepad";
+    public string GamepadToolTip => IsGamepadConnected ? "Controle Gamepad Conectado" : "Nenhum controle detectado";
+    public double GamepadIconOpacity => IsGamepadConnected ? 1.0 : 0.45;
+    public Brush GamepadIconBrush => IsGamepadConnected ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xA3, 0xA3, 0xA3));
 
     public bool HasSelectedPhoto => SelectedPhoto != null;
     public string SelectedPhotoName => SelectedPhoto?.FileName ?? "Nenhuma foto selecionada";
@@ -201,6 +207,8 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _isDashboardVisible = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsDashboardVisible));
+                OnPropertyChanged(nameof(IsWelcomeScreenVisible));
                 OnPropertyChanged(nameof(IsWorkspaceVisible));
             }
         }

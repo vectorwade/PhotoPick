@@ -67,8 +67,14 @@ public partial class MainWindow : Window
 
     private void LogoHome_Click(object sender, RoutedEventArgs e)
     {
-        // Alterna ou reabre a tela de boas-vindas / Novo Projeto
-        ViewModel.IsWelcomeScreenVisible = !ViewModel.IsWelcomeScreenVisible;
+        if (ViewModel != null)
+        {
+            ViewModel.IsWelcomeScreenVisible = !ViewModel.IsWelcomeScreenVisible;
+            if (WelcomeOverlayGrid != null)
+            {
+                WelcomeOverlayGrid.Visibility = ViewModel.IsWelcomeScreenVisible ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
     }
 
     #endregion
@@ -86,6 +92,11 @@ public partial class MainWindow : Window
         {
             ViewModel.FilterByFormat(item.Extension);
         }
+    }
+
+    private void BtnGamepadMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (GamepadFlyoutPopup != null) GamepadFlyoutPopup.IsOpen = !GamepadFlyoutPopup.IsOpen;
     }
 
     private void BtnViewMode_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleViewMode();
@@ -111,7 +122,8 @@ public partial class MainWindow : Window
 
     private void BtnWelcomeReturn_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.IsWelcomeScreenVisible = false;
+        if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+        if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
     }
 
     private async Task PromptOpenFolderAsync()
@@ -124,8 +136,16 @@ public partial class MainWindow : Window
 
         if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
         {
-            await ViewModel.LoadDirectoryAsync(dialog.FolderName);
-            ViewModel.IsWelcomeScreenVisible = false;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+            if (ViewModel != null)
+            {
+                await ViewModel.LoadDirectoryAsync(dialog.FolderName);
+                ViewModel.IsWelcomeScreenVisible = false;
+            }
+
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
         }
     }
 
