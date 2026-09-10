@@ -5,6 +5,8 @@ namespace PhotoPick.Desktop.ViewModels;
 public class PhotoRowViewModel
 {
     public ObservableCollection<PhotoViewModel> Columns { get; } = [];
+    public ObservableCollection<PhotoViewModel> Items => Columns;
+    public ObservableCollection<PhotoViewModel> Photos => Columns;
 
     public PhotoRowViewModel() { }
 

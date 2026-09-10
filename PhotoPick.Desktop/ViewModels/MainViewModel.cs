@@ -473,6 +473,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             int count = await _session.LoadDirectoryAsync(directoryPath);
             RebuildViewModels();
+            RebuildFormatList();
             StatusMessage = $"{count} fotos carregadas. Use os botões ou atalhos: 'P' para Pick, 'X' para Reject, '1-5' para Estrelas.";
 
             if (Photos.Count > 0)
@@ -890,7 +891,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (availableWidth <= 0) return;
         // Ajusta colunas: de 2 a 7 colunas proporcionalmente
         int cols = Math.Clamp((int)(availableWidth / 285), 2, 7);
-        if (cols != _columnsPerRow)
+        if (cols != _columnsPerRow || (Rows.Count == 0 && Photos.Count > 0))
         {
             _columnsPerRow = cols;
             RebuildRows();

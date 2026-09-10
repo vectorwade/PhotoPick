@@ -57,6 +57,7 @@
             <Setter Property="Margin" Value="6,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="200"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -213,7 +214,8 @@
             <Setter Property="Foreground" Value="#D4D4D4"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Padding" Value="10,7"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -254,11 +256,13 @@
         <Border Grid.Row="0" Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <!-- Logo / Home (Esquerda) -->
+                    <!-- 0: Logo / Home (Esquerda) -->
                     <ColumnDefinition Width="Auto"/>
-                    <!-- Barra de Ações Rápidas (Centro) -->
+                    <!-- 1: Barra de Ações Rápidas (Centro) -->
                     <ColumnDefinition Width="*"/>
-                    <!-- Controles de Janela (Direita) -->
+                    <!-- 2: Ações Principais (Exportar & Lr Sincronizar) -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- 3: Controles de Janela (Direita) -->
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -272,7 +276,7 @@
                     </StackPanel>
                 </Button>
 
-                <!-- Ações Rápidas Centrais (Alternar Visão, Auto-Advance, Lr, Export, Ajuda) -->
+                <!-- Ações Rápidas Centrais (Alternar Visão, Auto-Advance, Tema, Ajuda) -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
                     <!-- Alternar Visão Grade / Loupe -->
                     <Button Style="{StaticResource IdeToolBtn}" Click="BtnViewMode_Click" Margin="0,0,4,0"
@@ -299,7 +303,7 @@
                         <TextBlock Text="{Binding AutoAdvanceLabel, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource TextNormal}"/>
                     </Button>
 
-                                        <!-- Alternar Tema Claro / Escuro -->
+                    <!-- Alternar Tema Claro / Escuro -->
                     <Button Style="{StaticResource IdeToolBtn}" Click="BtnToggleTheme_Click" Margin="0,0,4,0"
                             ToolTip="Alternar entre Modo Escuro e Modo Claro">
                         <StackPanel Orientation="Horizontal">
@@ -308,24 +312,6 @@
                         </StackPanel>
                     </Button>
 
-                    <Separator Width="1" Height="18" Background="#2B2B2B" Margin="6,0"/>
-
-                    <!-- Sincronizar / Enviar Lightroom -->
-                    <Button Style="{StaticResource PrimaryActionBtn}" Click="BtnLightroom_Click" Margin="0,0,4,0"
-                            ToolTip="Enviar fotos selecionadas diretamente para o Adobe Lightroom Classic">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Lr Sincronizar" FontSize="11.5" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Exportar Selecionadas -->
-                    <Button Style="{StaticResource IdeToolBtn}" Click="BtnExport_Click" Margin="0,0,4,0"
-                            ToolTip="Copiar apenas as fotos selecionadas para uma nova pasta ou pendrive">
-                        <TextBlock Text="💾 Exportar" FontSize="11.5"/>
-                    </Button>
-
-                    <Separator Width="1" Height="18" Background="#2B2B2B" Margin="6,0"/>
-
                     <!-- Ajuda e Guia -->
                     <Button Style="{StaticResource IdeToolBtn}" Click="BtnHelp_Click"
                             ToolTip="Guia de Recursos, Atalhos de Teclado e Gamepad (F1 ou H)">
@@ -333,8 +319,29 @@
                     </Button>
                 </StackPanel>
 
+                <!-- Ações Principais: Exportar e Lr Sincronizar (Alinhados à Direita) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <!-- Botão Exportar Selecionadas -->
+                    <Button Style="{StaticResource IdeToolBtn}" Click="BtnExport_Click" Margin="0,0,6,0"
+                            Background="#222222" BorderBrush="#333333" Padding="12,6"
+                            ToolTip="Copiar apenas as fotos selecionadas para uma nova pasta ou pendrive">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="💾 " FontSize="12"/>
+                            <TextBlock Text="Exportar" FontWeight="SemiBold" FontSize="11.5" Foreground="#FFFFFF"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Botão Sincronizar / Enviar Lightroom (Verde) -->
+                    <Button Style="{StaticResource PrimaryActionBtn}" Click="BtnLightroom_Click"
+                            ToolTip="Enviar fotos selecionadas diretamente para o Adobe Lightroom Classic">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Lr Sincronizar" FontSize="11.5" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
                 <!-- Controles da Janela (Min, Max, Close) -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <StackPanel Grid.Column="3" Orientation="Horizontal">
                     <Button Style="{StaticResource CaptionBtn}" Click="BtnMinimize_Click" ToolTip="Minimizar">
                         <TextBlock Text="🗕" FontSize="10" Foreground="{DynamicResource TextMuted}"/>
                     </Button>
@@ -398,40 +405,60 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- Filtros Rápidos de Seleção -->
+                    <!-- Filtros Rápidos de Seleção (Grid 2 colunas para evitar cortes) -->
                     <TextBlock DockPanel.Dock="Top" Text="FILTROS DE STATUS" FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource TextMuted}" Margin="4,0,0,6"/>
 
                     <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
-                        <Button Style="{StaticResource NavListBtn}" Click="FilterAll_Click">
-                            <DockPanel LastChildFill="True" Width="210">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding TotalCount, Mode=OneWay}" Foreground="{DynamicResource TextMuted}" FontSize="11"/>
-                                <TextBlock Text="Todas as Fotos" Foreground="{DynamicResource TextNormal}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource NavListBtn}" Click="FilterAll_Click" HorizontalAlignment="Stretch" Padding="10,7,12,7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Todas as Fotos" Foreground="{DynamicResource TextNormal}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding TotalCount, Mode=OneWay}" Foreground="{DynamicResource TextMuted}" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0"/>
+                            </Grid>
                         </Button>
-                        <Button Style="{StaticResource NavListBtn}" Click="FilterPicked_Click">
-                            <DockPanel LastChildFill="True" Width="210">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding PickedCount, Mode=OneWay}" Foreground="#2ECC71" FontWeight="Bold" FontSize="11"/>
-                                <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource NavListBtn}" Click="FilterPicked_Click" HorizontalAlignment="Stretch" Padding="10,7,12,7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="✔ " Foreground="#2ECC71"/>
                                     <TextBlock Text="Selecionadas" Foreground="#2ECC71"/>
                                 </StackPanel>
-                            </DockPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding PickedCount, Mode=OneWay}" Foreground="#2ECC71" FontWeight="Bold" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0"/>
+                            </Grid>
                         </Button>
-                        <Button Style="{StaticResource NavListBtn}" Click="FilterRejected_Click">
-                            <DockPanel LastChildFill="True" Width="210">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding RejectedCount, Mode=OneWay}" Foreground="#E74C3C" FontWeight="Bold" FontSize="11"/>
-                                <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource NavListBtn}" Click="FilterRejected_Click" HorizontalAlignment="Stretch" Padding="10,7,12,7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="✖ " Foreground="#E74C3C"/>
                                     <TextBlock Text="Rejeitadas" Foreground="#E74C3C"/>
                                 </StackPanel>
-                            </DockPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding RejectedCount, Mode=OneWay}" Foreground="#E74C3C" FontWeight="Bold" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0"/>
+                            </Grid>
                         </Button>
-                        <Button Style="{StaticResource NavListBtn}" Click="FilterUnflagged_Click">
-                            <DockPanel LastChildFill="True" Width="210">
-                                <TextBlock DockPanel.Dock="Right" Text="{Binding UnflaggedCount, Mode=OneWay}" Foreground="{DynamicResource TextMuted}" FontSize="11"/>
-                                <TextBlock Text="○ Não Avaliadas" Foreground="{DynamicResource TextMuted}"/>
-                            </DockPanel>
+                        <Button Style="{StaticResource NavListBtn}" Click="FilterUnflagged_Click" HorizontalAlignment="Stretch" Padding="10,7,12,7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="○ Não Avaliadas" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding UnflaggedCount, Mode=OneWay}" Foreground="{DynamicResource TextMuted}" FontSize="11"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0"/>
+                            </Grid>
                         </Button>
                     </StackPanel>
 
@@ -442,16 +469,21 @@
                     <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Formats}" Margin="0,0,0,14">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource NavListBtn}" Click="FormatItem_Click" Margin="0,1">
-                                    <DockPanel LastChildFill="True" Width="210">
-                                        <Border DockPanel.Dock="Right" Background="{DynamicResource BgCardHover}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Count}" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold"/>
-                                        </Border>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource NavListBtn}" Click="FormatItem_Click" Margin="0,1" HorizontalAlignment="Stretch" Padding="10,7,12,7">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Icon}" FontSize="11" Margin="0,0,6,0"/>
                                             <TextBlock Text="{Binding DisplayName}" Foreground="{DynamicResource TextNormal}" FontSize="11" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
-                                    </DockPanel>
+                                        <Border Grid.Column="1" Background="{DynamicResource BgCardHover}" CornerRadius="4" Padding="6,1"
+                                                VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0,2,0">
+                                            <TextBlock Text="{Binding Count}" Foreground="{DynamicResource TextMuted}" FontSize="10" FontWeight="Bold"/>
+                                        </Border>
+                                    </Grid>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -494,25 +526,38 @@
             <!-- ========================================================== -->
             <Grid Grid.Column="2" Background="{DynamicResource BgWorkspace}">
                 <!-- Modo Grade de Fotos -->
-                <ScrollViewer x:Name="GridScrollViewer"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              Focusable="False"
-                              Visibility="{Binding IsGridViewMode, Converter={StaticResource BoolToVis}}">
-                    <ItemsControl ItemsSource="{Binding Rows}"
-                                  VirtualizingStackPanel.IsVirtualizing="True"
-                                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                  ScrollViewer.CanContentScroll="True"
-                                  Padding="12,10">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VirtualizingStackPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
+                <ListBox x:Name="GridScrollViewer"
+                               ItemsSource="{Binding Rows}"
+                               Visibility="{Binding IsGridViewMode, Converter={StaticResource BoolToVis}}"
+                               Background="Transparent"
+                               BorderThickness="0"
+                               Padding="12,10"
+                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                               ScrollViewer.VerticalScrollBarVisibility="Auto"
+                               ScrollViewer.CanContentScroll="True"
+                               VirtualizingPanel.IsVirtualizing="True"
+                               VirtualizingPanel.VirtualizationMode="Recycling"
+                               VirtualizingPanel.ScrollUnit="Pixel">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
 
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <ItemsControl ItemsSource="{Binding Items}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <ItemsControl ItemsSource="{Binding Columns}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -638,9 +683,8 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
                 <!-- Modo Loupe (Visualização de Foto Única / Zoom com Focus Peaking) -->
                 <Grid Visibility="{Binding IsSingleViewMode, Converter={StaticResource BoolToVis}}" Background="#0D0D0D">
@@ -893,7 +937,7 @@
                             </Button>
 
                             <!-- Ícone 2: Teclado -->
-                            <Button Style="{StaticResource ControlModeBtn}" ToolTip="Navegação e ações através dos atalhos">
+                            <Button Style="{StaticResource ControlModeBtn}" ToolTip="Atalhos: P (Pick) | X (Reject) | 1-5 (Estrelas) | F (Focus Peaking)">
                                 <Path Style="{StaticResource VectorIconPath}"
                                       Data="M 1,4 C 0.5,4 0,4.5 0,5 L 0,13 C 0,13.5 0.5,14 1,14 L 17,14 C 17.5,14 18,13.5 18,13 L 18,5 C 18,4.5 17.5,4 17,4 Z M 2,5.5 L 3.5,5.5 L 3.5,7 L 2,7 Z M 4.5,5.5 L 6,5.5 L 6,7 L 4.5,7 Z M 7,5.5 L 8.5,5.5 L 8.5,7 L 7,7 Z M 9.5,5.5 L 11,5.5 L 11,7 L 9.5,7 Z M 12,5.5 L 13.5,5.5 L 13.5,7 L 12,7 Z M 14.5,5.5 L 16,5.5 L 16,7 L 14.5,7 Z M 2,8 L 3.5,8 L 3.5,9.5 L 2,9.5 Z M 4.5,8 L 6,8 L 6,9.5 L 4.5,9.5 Z M 7,8 L 8.5,8 L 8.5,9.5 L 7,9.5 Z M 9.5,8 L 11,8 L 11,9.5 L 9.5,9.5 Z M 12,8 L 13.5,8 L 13.5,9.5 L 12,9.5 Z M 14.5,8 L 16,8 L 16,9.5 L 14.5,9.5 Z M 4,11 L 14,11 L 14,12.5 L 4,12.5 Z"
                                       Width="20" Height="18"/>

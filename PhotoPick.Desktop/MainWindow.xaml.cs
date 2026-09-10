@@ -351,8 +351,13 @@ public partial class MainWindow : Window
 
         if (Directory.Exists(target))
         {
-            await ViewModel.LoadDirectoryAsync(target);
-            ViewModel.IsWelcomeScreenVisible = false;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+            if (ViewModel != null) await ViewModel.LoadDirectoryAsync(target);
+
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
         }
     }
 
