@@ -135,4 +135,14 @@ public class CatalogDatabase
 
         return result;
     }
+
+    public async Task DeletePhotoAsync(string filePath)
+    {
+        using var conn = CreateConnection();
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM Photos WHERE FilePath = $path";
+        cmd.Parameters.AddWithValue("$path", filePath);
+        await cmd.ExecuteNonQueryAsync();
+    }
 }

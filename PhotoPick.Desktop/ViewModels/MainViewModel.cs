@@ -788,12 +788,89 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public void RateSelected(int rating)
+    public void RateSelected(int rating, bool autoAdvance = false)
     {
         if (SelectedPhoto == null) return;
-        SelectedPhoto.Rating = rating;
-        StatusMessage = rating > 0 ? $"Classificado: {rating} estrelas ({SelectedPhoto.FileName})" : $"Classificação removida ({SelectedPhoto.FileName})";
-        if (IsAutoAdvanceEnabled) NextPhoto();
+        int newRating = (SelectedPhoto.Rating == rating) ? 0 : rating;
+        SelectedPhoto.Rating = newRating;
+        StatusMessage = newRating > 0 ? $"Classificado: {newRating} estrelas ({SelectedPhoto.FileName})" : $"Classificação removida ({SelectedPhoto.FileName})";
+        if (autoAdvance && IsAutoAdvanceEnabled) NextPhoto();
+    }
+
+    public async Task DeleteSelectedPhotoAsync()
+    {
+        if (SelectedPhoto == null) return;
+
+        var photoToDelete = SelectedPhoto;
+        var result = MessageBox.Show(
+            $"Deseja realmente excluir a foto '{photoToDelete.FileName}' do seu computador?\n\nO arquivo original e suas configurações serão movidos para a Lixeira do Windows.",
+            "Confirmar Exclusão de Arquivo",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        int currentIndex = Photos.IndexOf(photoToDelete);
+
+        try
+        {
+            // 1. Move arquivo original para a Lixeira do Windows
+            bool trashed = FileTrashHelper.SendToTrash(photoToDelete.FilePath);
+            if (!trashed && File.Exists(photoToDelete.FilePath))
+            {
+                MessageBox.Show(
+                    $"Não foi possível mover o arquivo '{photoToDelete.FileName}' para a lixeira.",
+                    "Erro ao Excluir",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                return;
+            }
+
+            // 2. Move arquivo .xmp associado (se existir) para a Lixeira
+            string xmpPath = Path.ChangeExtension(photoToDelete.FilePath, ".xmp");
+            if (File.Exists(xmpPath))
+            {
+                FileTrashHelper.SendToTrash(xmpPath);
+            }
+
+            // 3. Remove arquivo do cache de miniaturas se existir
+            if (!string.IsNullOrEmpty(photoToDelete.Model.ThumbnailCachePath) && File.Exists(photoToDelete.Model.ThumbnailCachePath))
+            {
+                try { File.Delete(photoToDelete.Model.ThumbnailCachePath); } catch { }
+            }
+
+            // 4. Remove do banco SQLite e da sessão de triagem
+            await _session.DeletePhotoAsync(photoToDelete.Model);
+
+            // 5. Remove da lista observável
+            Photos.Remove(photoToDelete);
+            RebuildRows();
+            RebuildFormatList();
+            RefreshStats();
+
+            // 6. Seleciona a próxima foto ou limpa a seleção
+            if (Photos.Count > 0)
+            {
+                int nextIndex = Math.Clamp(currentIndex, 0, Photos.Count - 1);
+                SelectedPhoto = Photos[nextIndex];
+            }
+            else
+            {
+                SelectedPhoto = null;
+                LoupeImage = null;
+                PeakingOverlayImage = null;
+            }
+
+            StatusMessage = $"Foto '{photoToDelete.FileName}' enviada para a Lixeira do Windows.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Ocorreu um erro ao tentar excluir o arquivo:\n{ex.Message}",
+                "Erro de Exclusão",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     public void TogglePickSelected()

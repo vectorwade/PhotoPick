@@ -140,6 +140,20 @@ public partial class MainWindow : Window
         if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
     }
 
+    private void WelcomeOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ViewModel != null && ViewModel.Photos.Count > 0)
+        {
+            ViewModel.IsWelcomeScreenVisible = false;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void WelcomeCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+    }
+
     private async Task PromptOpenFolderAsync()
     {
         var dialog = new OpenFolderDialog
@@ -224,7 +238,7 @@ public partial class MainWindow : Window
         if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
         {
             ViewModel.SelectedPhoto = photo;
-            ViewModel.RateSelected(star);
+            ViewModel.RateSelected(star, autoAdvance: false);
         }
     }
 
@@ -333,21 +347,23 @@ public partial class MainWindow : Window
     private void BtnLoupeDoubt_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleDoubtSelected();
     private void BtnLoupeReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
     private void BtnLoupeClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
+    private async void BtnLoupeDelete_Click(object sender, RoutedEventArgs e) => await ViewModel.DeleteSelectedPhotoAsync();
 
     #endregion
 
     #region Painel Direito: Inspetor Ações
 
-    private void InspectorStar1_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(1);
-    private void InspectorStar2_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(2);
-    private void InspectorStar3_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(3);
-    private void InspectorStar4_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(4);
-    private void InspectorStar5_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(5);
+    private void InspectorStar1_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(1, autoAdvance: false);
+    private void InspectorStar2_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(2, autoAdvance: false);
+    private void InspectorStar3_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(3, autoAdvance: false);
+    private void InspectorStar4_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(4, autoAdvance: false);
+    private void InspectorStar5_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(5, autoAdvance: false);
 
     private void BtnInspectorPick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
     private void BtnInspectorDoubt_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleDoubtSelected();
     private void BtnInspectorReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
     private void BtnInspectorClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
+    private async void BtnInspectorDelete_Click(object sender, RoutedEventArgs e) => await ViewModel.DeleteSelectedPhotoAsync();
 
     #endregion
 
@@ -365,8 +381,33 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (ViewModel.IsWelcomeScreenVisible && ViewModel.Photos.Count > 0)
+        {
+            if (e.Key == Key.Escape)
+            {
+                ViewModel.IsWelcomeScreenVisible = false;
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                e.Handled = true;
+                return;
+            }
+        }
+
         switch (e.Key)
         {
+            case Key.Escape:
+                if (ViewModel.IsWelcomeScreenVisible && ViewModel.Photos.Count > 0)
+                {
+                    ViewModel.IsWelcomeScreenVisible = false;
+                    if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                    e.Handled = true;
+                }
+                break;
+
+            case Key.Delete:
+                await ViewModel.DeleteSelectedPhotoAsync();
+                e.Handled = true;
+                break;
+
             case Key.F1 or Key.H:
                 ViewModel.OpenHelpModal();
                 e.Handled = true;
@@ -402,12 +443,12 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
-            case Key.D1 or Key.NumPad1: ViewModel.RateSelected(1); e.Handled = true; break;
-            case Key.D2 or Key.NumPad2: ViewModel.RateSelected(2); e.Handled = true; break;
-            case Key.D3 or Key.NumPad3: ViewModel.RateSelected(3); e.Handled = true; break;
-            case Key.D4 or Key.NumPad4: ViewModel.RateSelected(4); e.Handled = true; break;
-            case Key.D5 or Key.NumPad5: ViewModel.RateSelected(5); e.Handled = true; break;
-            case Key.D0 or Key.NumPad0: ViewModel.RateSelected(0); e.Handled = true; break;
+            case Key.D1 or Key.NumPad1: ViewModel.RateSelected(1, autoAdvance: false); e.Handled = true; break;
+            case Key.D2 or Key.NumPad2: ViewModel.RateSelected(2, autoAdvance: false); e.Handled = true; break;
+            case Key.D3 or Key.NumPad3: ViewModel.RateSelected(3, autoAdvance: false); e.Handled = true; break;
+            case Key.D4 or Key.NumPad4: ViewModel.RateSelected(4, autoAdvance: false); e.Handled = true; break;
+            case Key.D5 or Key.NumPad5: ViewModel.RateSelected(5, autoAdvance: false); e.Handled = true; break;
+            case Key.D0 or Key.NumPad0: ViewModel.RateSelected(0, autoAdvance: false); e.Handled = true; break;
 
             case Key.Right:
                 ResetLoupeZoom();

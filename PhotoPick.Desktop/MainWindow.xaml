@@ -769,6 +769,9 @@
                             <Button Style="{StaticResource IdeToolBtn}" Click="BtnLoupeClear_Click" ToolTip="Limpar Seleção [U]">
                                 <TextBlock Text="↺ Limpar [U]" FontSize="11.5"/>
                             </Button>
+                            <Button Style="{StaticResource IdeToolBtn}" Click="BtnLoupeDelete_Click" Margin="4,0,0,0" ToolTip="Excluir foto do computador e enviar para a lixeira [Tecla Delete]">
+                                <TextBlock Text="🗑️ Excluir [Del]" Foreground="#E74C3C" FontSize="11.5"/>
+                            </Button>
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -904,6 +907,12 @@
                                         ToolTip="Limpar estado e notas [Tecla U]">
                                     <TextBlock Text="↺ Limpar Seleção [U]" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
                                 </Button>
+
+                                <!-- Botão Excluir Foto (Lixeira do Windows) -->
+                                <Button Style="{StaticResource IdeToolBtn}" Background="#251414" BorderBrush="#4A2020" Click="BtnInspectorDelete_Click" Margin="0,6,0,0" Padding="0,8"
+                                        ToolTip="Excluir foto do computador e enviar para a lixeira [Tecla Delete]">
+                                    <TextBlock Text="🗑️ Excluir Foto [Del]" FontSize="11.5" Foreground="#E74C3C" FontWeight="SemiBold"/>
+                                </Button>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -933,12 +942,23 @@
         <!-- OVERLAY: WELCOME SCREEN / INICIALIZAÇÃO                        -->
         <!-- ============================================================== -->
         <Grid x:Name="WelcomeOverlayGrid" Grid.Row="1" Grid.RowSpan="2" Background="#F2141414"
-              Visibility="{Binding IsWelcomeScreenVisible, Converter={StaticResource BoolToVis}}">
+              Visibility="{Binding IsWelcomeScreenVisible, Converter={StaticResource BoolToVis}}"
+              MouseLeftButtonDown="WelcomeOverlay_MouseLeftButtonDown">
             <Border Background="{DynamicResource BgPanel}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
-                    CornerRadius="8" Padding="36" Width="540" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <StackPanel HorizontalAlignment="Center">
-                    <!-- Logotipo Oficial Mavi Select -->
-                    <Image Source="app_icon.png" Width="76" Height="76" Margin="0,0,0,16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    CornerRadius="8" Padding="36" Width="540" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MouseLeftButtonDown="WelcomeCard_MouseLeftButtonDown">
+                <Grid>
+                    <!-- Botão ✕ Fechar no Canto Superior Direito -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-20,-20,0"
+                            Style="{StaticResource CaptionBtn}" Click="BtnWelcomeReturn_Click"
+                            ToolTip="Fechar tela inicial e voltar à sessão de fotos [Esc]"
+                            Visibility="{Binding Photos.Count, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="✕" FontSize="14" Foreground="{DynamicResource TextMuted}"/>
+                    </Button>
+
+                    <StackPanel HorizontalAlignment="Center">
+                        <!-- Logotipo Oficial Mavi Select -->
+                        <Image Source="app_icon.png" Width="76" Height="76" Margin="0,0,0,16" RenderOptions.BitmapScalingMode="HighQuality"/>
 
                     <!-- Título Oficial -->
                     <TextBlock Text="Mavi Select" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF"
@@ -1034,6 +1054,7 @@
                         </Popup>
                     </StackPanel>
                 </StackPanel>
+                </Grid>
             </Border>
         </Grid>
 
@@ -1064,6 +1085,8 @@
                             <Grid Margin="0,3"><TextBlock Text="[X]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Marcar como Rejeitada (Aura Vermelha)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
                             <Grid Margin="0,3"><TextBlock Text="[U]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Limpar classificação e notas" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
                             <Grid Margin="0,3"><TextBlock Text="[1 a 5]" FontWeight="Bold" Foreground="#F39C12"/><TextBlock Text="Atribuir classificação de estrelas" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                            <Grid Margin="0,3"><TextBlock Text="[Del]" FontWeight="Bold" Foreground="#E74C3C"/><TextBlock Text="Excluir foto do computador (enviar para a Lixeira do Windows)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
+                            <Grid Margin="0,3"><TextBlock Text="[Esc]" FontWeight="Bold" Foreground="{DynamicResource TextMuted}"/><TextBlock Text="Fechar tela inicial ou modais e voltar à grade" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
                             <Grid Margin="0,3"><TextBlock Text="[F]" FontWeight="Bold" Foreground="#2ECC71"/><TextBlock Text="Ativar / Desativar Focus Peaking (Contorno Verde Neon)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
                             <Grid Margin="0,3"><TextBlock Text="[Z]" FontWeight="Bold" Foreground="#3498DB"/><TextBlock Text="Alternar Zoom 100% (Inspeção 1:1 de Pixels)" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>
                             <Grid Margin="0,3"><TextBlock Text="[Espaço]" FontWeight="Bold" Foreground="#FFFFFF"/><TextBlock Text="Alternar entre Grade e Visualização de Foto Única" Margin="40,0,0,0" Foreground="{DynamicResource TextNormal}"/></Grid>

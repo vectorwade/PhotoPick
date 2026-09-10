@@ -356,6 +356,26 @@ public class CullingSession
         StatsChanged?.Invoke();
     }
 
+    public bool DeletePhoto(PhotoItem photo)
+    {
+        bool removed = _allPhotos.Remove(photo);
+        FilteredPhotos.Remove(photo);
+        BurstStackingService.GroupBursts(_allPhotos);
+        StatsChanged?.Invoke();
+        return removed;
+    }
+
+    public async Task<bool> DeletePhotoAsync(PhotoItem photo)
+    {
+        bool removed = DeletePhoto(photo);
+        try
+        {
+            await _database.DeletePhotoAsync(photo.FilePath);
+        }
+        catch { }
+        return removed;
+    }
+
     public async Task<int> SaveModifiedXmpAsync(CancellationToken ct = default)
     {
         var modified = _allPhotos.Where(p => p.IsModified).ToList();
