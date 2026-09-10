@@ -1,4 +1,4 @@
-﻿<Window x:Class="PhotoPick.Desktop.MainWindow"
+<Window x:Class="PhotoPick.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -723,11 +723,11 @@
                         <Border Background="#121212" CornerRadius="8" Padding="16,10" Margin="0,20,0,0" BorderBrush="#252525" BorderThickness="1"
                                 Visibility="{Binding Photos.Count, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Foreground="#888888" FontSize="11" Margin="8,0"><Run Text="Total: "/><Run Text="{Binding TotalCount}" FontWeight="Bold" Foreground="#FFFFFF"/></TextBlock>
-                                <TextBlock Foreground="#2ECC71" FontSize="11" Margin="8,0"><Run Text="Selecionadas: "/><Run Text="{Binding PickedCount}" FontWeight="Bold"/></TextBlock>
-                                <TextBlock Foreground="#E74C3C" FontSize="11" Margin="8,0"><Run Text="Rejeitadas: "/><Run Text="{Binding RejectedCount}" FontWeight="Bold"/></TextBlock>
+                                <TextBlock Foreground="#888888" FontSize="11" Margin="8,0"><Run Text="Total: "/><Run Text="{Binding TotalCount, Mode=OneWay}" FontWeight="Bold" Foreground="#FFFFFF"/></TextBlock>
+                                <TextBlock Foreground="#2ECC71" FontSize="11" Margin="8,0"><Run Text="Selecionadas: "/><Run Text="{Binding PickedCount, Mode=OneWay}" FontWeight="Bold"/></TextBlock>
+                                <TextBlock Foreground="#E74C3C" FontSize="11" Margin="8,0"><Run Text="Rejeitadas: "/><Run Text="{Binding RejectedCount, Mode=OneWay}" FontWeight="Bold"/></TextBlock>
                                 <TextBlock Foreground="#D35400" FontSize="11" Margin="8,0" Visibility="{Binding UnsavedCount, Converter={StaticResource BoolToVis}}">
-                                    <Run Text="Pendentes XMP: "/><Run Text="{Binding UnsavedCount}" FontWeight="Bold"/>
+                                    <Run Text="Pendentes XMP: "/><Run Text="{Binding UnsavedCount, Mode=OneWay}" FontWeight="Bold"/>
                                 </TextBlock>
                             </StackPanel>
                         </Border>
