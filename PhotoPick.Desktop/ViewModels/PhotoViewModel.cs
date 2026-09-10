@@ -77,6 +77,19 @@ public class PhotoViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool IsDoubt
+    {
+        get => _model.IsDoubt;
+        set
+        {
+            if (_model.IsDoubt != value)
+            {
+                _session.ToggleDoubt(_model);
+                NotifyRatingAndAuraChanged();
+            }
+        }
+    }
+
     public string RatingStars => _model.RatingStars;
     public bool IsModified => _model.IsModified;
 
@@ -112,13 +125,14 @@ public class PhotoViewModel : INotifyPropertyChanged
         get
         {
             if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113));     // Verde esmeralda
+            if (IsDoubt) return new SolidColorBrush(Color.FromRgb(243, 156, 18));     // Âmbar / Dourado
             if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60));   // Vermelho coral
             if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18));   // Dourado
             return new SolidColorBrush(Color.FromRgb(38, 38, 38));                    // Neutro escuro
         }
     }
 
-    public double CardBorderThickness => (IsPicked || IsRejected) ? 2.5 : 1.5;
+    public double CardBorderThickness => (IsPicked || IsRejected || IsDoubt) ? 2.5 : 1.5;
 
     public Effect? AuraEffect
     {
@@ -129,6 +143,16 @@ public class PhotoViewModel : INotifyPropertyChanged
                 return new DropShadowEffect
                 {
                     Color = Color.FromRgb(46, 204, 113),
+                    BlurRadius = 22,
+                    ShadowDepth = 0,
+                    Opacity = 0.85
+                };
+            }
+            if (IsDoubt)
+            {
+                return new DropShadowEffect
+                {
+                    Color = Color.FromRgb(243, 156, 18),
                     BlurRadius = 22,
                     ShadowDepth = 0,
                     Opacity = 0.85
@@ -153,6 +177,7 @@ public class PhotoViewModel : INotifyPropertyChanged
         get
         {
             if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113));
+            if (IsDoubt) return new SolidColorBrush(Color.FromRgb(243, 156, 18));
             if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60));
             if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18));
             return new SolidColorBrush(Color.FromRgb(80, 80, 80));
@@ -236,11 +261,11 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     public string FormattedCamera => !string.IsNullOrWhiteSpace(_model.CameraModel) 
         ? _model.CameraModel 
-        : (!string.IsNullOrWhiteSpace(_model.CameraMake) ? _model.CameraMake : "Nikon Z6 III");
+        : (!string.IsNullOrWhiteSpace(_model.CameraMake) ? _model.CameraMake : "-");
 
     public string FormattedFlash => _model.FlashFired.HasValue
-        ? (_model.FlashFired.Value ? "Disparo Godox X3 / V1 Pro" : "Sem Flash")
-        : "Sem Flash";
+        ? (_model.FlashFired.Value ? "Flash Disparado" : "Sem Flash")
+        : "-";
 
     public string FormattedDimensions => _model.Width > 0 && _model.Height > 0 
         ? $"{_model.Width} × {_model.Height} px" 
@@ -344,6 +369,11 @@ public class PhotoViewModel : INotifyPropertyChanged
         IsRejected = !IsRejected;
     }
 
+    public void ToggleDoubt()
+    {
+        IsDoubt = !IsDoubt;
+    }
+
     public void ClearMarks()
     {
         Rating = 0;
@@ -356,6 +386,7 @@ public class PhotoViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RatingStars));
         OnPropertyChanged(nameof(ColorLabel));
         OnPropertyChanged(nameof(IsPicked));
+        OnPropertyChanged(nameof(IsDoubt));
         OnPropertyChanged(nameof(IsRejected));
         OnPropertyChanged(nameof(CardBorderBrush));
         OnPropertyChanged(nameof(CardBorderThickness));

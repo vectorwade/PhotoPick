@@ -88,6 +88,78 @@ public class RawPreviewExtractor : IRawPreviewExtractor
         }, ct);
     }
 
+    #region Normalização de Câmeras e Drones DJI
+
+    public static string? NormalizeCameraModel(string? make, string? model)
+    {
+        if (string.IsNullOrWhiteSpace(make) && string.IsNullOrWhiteSpace(model)) return null;
+
+        string cleanMake = (make ?? "").Trim();
+        string cleanModel = (model ?? "").Trim();
+
+        // Detecção e mapeamento de drones DJI
+        bool isDji = cleanMake.Contains("DJI", StringComparison.OrdinalIgnoreCase) ||
+                     cleanModel.StartsWith("FC", StringComparison.OrdinalIgnoreCase) ||
+                     cleanModel.Contains("DJI", StringComparison.OrdinalIgnoreCase);
+
+        if (isDji)
+        {
+            string djiName = cleanModel.ToUpperInvariant() switch
+            {
+                "FC3582" or "FC-3582" => "DJI Mini 3 Pro",
+                "FC3411" or "FC-3411" => "DJI Air 2S",
+                "FC8284" or "FC-8284" => "DJI Mini 4 Pro",
+                "FC2403" or "FC-2403" => "DJI Mini 2",
+                "FC3170" or "FC-3170" => "DJI Mavic Air 2",
+                "FC220" or "FC-220" => "DJI Mavic Pro",
+                "FC6310" or "FC-6310" => "DJI Phantom 4 Pro",
+                "L2D-20C" or "L2D_20C" or "L2D20C" => "DJI Mavic 3 (Hasselblad)",
+                "FC300X" or "FC-300X" => "DJI Phantom 3 Pro",
+                "FC300S" or "FC-300S" => "DJI Phantom 3 Adv",
+                _ => cleanModel.StartsWith("DJI", StringComparison.OrdinalIgnoreCase)
+                    ? cleanModel
+                    : (cleanModel.Length > 0 ? $"DJI {cleanModel}" : "DJI Drone")
+            };
+            return djiName;
+        }
+
+        if (!string.IsNullOrEmpty(cleanMake) && !string.IsNullOrEmpty(cleanModel))
+        {
+            if (cleanModel.StartsWith(cleanMake, StringComparison.OrdinalIgnoreCase))
+            {
+                return cleanModel;
+            }
+            return $"{cleanMake} {cleanModel}";
+        }
+
+        return !string.IsNullOrEmpty(cleanModel) ? cleanModel : cleanMake;
+    }
+
+    private static string? ReadTiffString(FileStream fs, uint valOffset, uint count, ReadOnlySpan<byte> entryOffsetBytes, bool isLittleEndian)
+    {
+        if (count == 0 || count > 1024) return null;
+        byte[] strBuf = new byte[count];
+        if (count <= 4)
+        {
+            entryOffsetBytes.Slice(0, (int)count).CopyTo(strBuf);
+        }
+        else
+        {
+            if (valOffset >= fs.Length) return null;
+            long saved = fs.Position;
+            fs.Seek(valOffset, SeekOrigin.Begin);
+            int read = fs.Read(strBuf, 0, (int)count);
+            fs.Seek(saved, SeekOrigin.Begin);
+            if (read <= 0) return null;
+        }
+        int len = Array.IndexOf(strBuf, (byte)0);
+        if (len < 0) len = strBuf.Length;
+        string result = Encoding.ASCII.GetString(strBuf, 0, len).Trim();
+        return string.IsNullOrEmpty(result) ? null : result;
+    }
+
+    #endregion
+
     #region JPEG Direto
 
     private static RawPreviewResult ExtractFromJpegFile(string filePath, Stopwatch sw)
@@ -95,7 +167,8 @@ public class RawPreviewExtractor : IRawPreviewExtractor
         var bytes = File.ReadAllBytes(filePath);
         var (width, height, orientation, model, make, flashFired, dateTaken) = ParseJpegInfo(bytes);
         sw.Stop();
-        return RawPreviewResult.Ok(bytes, orientation, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
+        string? normalized = NormalizeCameraModel(make, model);
+        return RawPreviewResult.Ok(bytes, orientation, width, height, sw.Elapsed.TotalMilliseconds, normalized, make, flashFired, dateTaken);
     }
 
     #endregion
@@ -139,6 +212,10 @@ public class RawPreviewExtractor : IRawPreviewExtractor
 
         var candidates = new List<(long offset, long length)>();
         int orientation = 1;
+        string? tiffMake = null;
+        string? tiffModel = null;
+        DateTime? tiffDate = null;
+        bool? tiffFlash = null;
 
         // Fila de IFDs para processar (incluindo SubIFDs)
         var ifdOffsets = new Queue<uint>();
@@ -197,6 +274,47 @@ public class RawPreviewExtractor : IRawPreviewExtractor
                         {
                             orientation = (int)(isLittleEndian ? (ushort)valOffset : (valOffset >> 16));
                             if (orientation < 1 || orientation > 8) orientation = 1;
+                        }
+                        break;
+
+                    case 0x010F: // Make (Fabricante)
+                        if (string.IsNullOrEmpty(tiffMake))
+                        {
+                            tiffMake = ReadTiffString(fs, valOffset, count, entry[8..12], isLittleEndian);
+                        }
+                        break;
+
+                    case 0x0110: // Model (Modelo)
+                        if (string.IsNullOrEmpty(tiffModel))
+                        {
+                            tiffModel = ReadTiffString(fs, valOffset, count, entry[8..12], isLittleEndian);
+                        }
+                        break;
+
+                    case 0x0132: // DateTime
+                    case 0x9003: // DateTimeOriginal
+                        if (!tiffDate.HasValue)
+                        {
+                            string? dStr = ReadTiffString(fs, valOffset, count, entry[8..12], isLittleEndian);
+                            if (!string.IsNullOrEmpty(dStr) && DateTime.TryParseExact(dStr.Trim(), "yyyy:MM:dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out var dt))
+                            {
+                                tiffDate = dt;
+                            }
+                        }
+                        break;
+
+                    case 0x9209: // Flash
+                        if (!tiffFlash.HasValue)
+                        {
+                            ushort fVal = (ushort)(isLittleEndian ? valOffset : (valOffset >> 16));
+                            tiffFlash = (fVal & 0x0001) != 0;
+                        }
+                        break;
+
+                    case 0x8769: // ExifIFDPointer
+                        if (valOffset > 0 && valOffset < fs.Length)
+                        {
+                            ifdOffsets.Enqueue(valOffset);
                         }
                         break;
 
@@ -294,8 +412,15 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             {
                 var (width, height, parsedOrient, model, make, flashFired, dateTaken) = ParseJpegInfo(jpegBytes);
                 int finalOrient = parsedOrient != 1 ? parsedOrient : orientation;
+
+                string? finalMake = !string.IsNullOrEmpty(tiffMake) ? tiffMake : make;
+                string? finalModel = !string.IsNullOrEmpty(tiffModel) ? tiffModel : model;
+                string? normalizedCamera = NormalizeCameraModel(finalMake, finalModel);
+                bool? finalFlash = tiffFlash.HasValue ? tiffFlash : flashFired;
+                DateTime? finalDate = tiffDate.HasValue ? tiffDate : dateTaken;
+
                 sw.Stop();
-                return RawPreviewResult.Ok(jpegBytes, finalOrient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
+                return RawPreviewResult.Ok(jpegBytes, finalOrient, width, height, sw.Elapsed.TotalMilliseconds, normalizedCamera, finalMake, finalFlash, finalDate);
             }
         }
 
@@ -317,7 +442,8 @@ public class RawPreviewExtractor : IRawPreviewExtractor
         {
             var (width, height, orient, model, make, flashFired, dateTaken) = ParseJpegInfo(result);
             sw.Stop();
-            return RawPreviewResult.Ok(result, orient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
+            string? normalized = NormalizeCameraModel(make, model);
+            return RawPreviewResult.Ok(result, orient, width, height, sw.Elapsed.TotalMilliseconds, normalized, make, flashFired, dateTaken);
         }
 
         return RawPreviewResult.Fail("Preview PRVW não encontrado no arquivo CR3.");

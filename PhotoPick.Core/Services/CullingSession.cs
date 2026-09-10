@@ -19,6 +19,7 @@ public enum PhotoFilterMode
     OverexposedOnly,
     BurstStacksOnly,
     PickedOnly,
+    DoubtOnly,
     UnflaggedOnly,
     RatedOnly,
     RejectedOnly,
@@ -52,8 +53,9 @@ public class CullingSession
 
     public int TotalCount => _allPhotos.Count;
     public int PickedCount => _allPhotos.Count(p => p.IsPicked);
+    public int DoubtCount => _allPhotos.Count(p => p.IsDoubt);
     public int RejectedCount => _allPhotos.Count(p => p.IsRejected);
-    public int UnflaggedCount => _allPhotos.Count(p => !p.IsPicked && !p.IsRejected && p.Rating == 0);
+    public int UnflaggedCount => _allPhotos.Count(p => !p.IsPicked && !p.IsRejected && !p.IsDoubt && p.Rating == 0);
     public int UnsavedCount => _allPhotos.Count(p => p.IsModified);
 
     // Contagens de Qualidade e Rajadas
@@ -209,8 +211,9 @@ public class CullingSession
             PhotoFilterMode.OverexposedOnly => _allPhotos.Where(p => p.IsOverexposed),
             PhotoFilterMode.BurstStacksOnly => _allPhotos.Where(p => !p.IsInBurst || p.IsBurstLead),
             PhotoFilterMode.PickedOnly => _allPhotos.Where(p => p.IsPicked),
+            PhotoFilterMode.DoubtOnly => _allPhotos.Where(p => p.IsDoubt),
             PhotoFilterMode.RejectedOnly => _allPhotos.Where(p => p.IsRejected),
-            PhotoFilterMode.UnflaggedOnly => _allPhotos.Where(p => !p.IsPicked && !p.IsRejected && p.Rating == 0),
+            PhotoFilterMode.UnflaggedOnly => _allPhotos.Where(p => !p.IsPicked && !p.IsRejected && !p.IsDoubt && p.Rating == 0),
             PhotoFilterMode.RatedOnly => _allPhotos.Where(p => p.Rating > 0),
             PhotoFilterMode.Rating5 => _allPhotos.Where(p => p.Rating == 5),
             PhotoFilterMode.Rating4 => _allPhotos.Where(p => p.Rating == 4),
@@ -340,6 +343,13 @@ public class CullingSession
     public void ToggleReject(PhotoItem item)
     {
         item.IsRejected = !item.IsRejected;
+        item.IsModified = true;
+        StatsChanged?.Invoke();
+    }
+
+    public void ToggleDoubt(PhotoItem item)
+    {
+        item.IsDoubt = !item.IsDoubt;
         item.IsModified = true;
         StatsChanged?.Invoke();
     }

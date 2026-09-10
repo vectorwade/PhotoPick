@@ -214,6 +214,7 @@ public class PhotoItem : INotifyPropertyChanged
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsPicked));
                 OnPropertyChanged(nameof(IsRejected));
+                OnPropertyChanged(nameof(IsDoubt));
             }
         }
     }
@@ -250,6 +251,23 @@ public class PhotoItem : INotifyPropertyChanged
                 Rating = 0;
             }
             else if (string.Equals(_colorLabel, "Red", StringComparison.OrdinalIgnoreCase))
+            {
+                ColorLabel = null;
+            }
+        }
+    }
+
+    public bool IsDoubt
+    {
+        get => string.Equals(_colorLabel, "Yellow", StringComparison.OrdinalIgnoreCase);
+        set
+        {
+            if (value)
+            {
+                ColorLabel = "Yellow";
+                Rating = 0;
+            }
+            else if (string.Equals(_colorLabel, "Yellow", StringComparison.OrdinalIgnoreCase))
             {
                 ColorLabel = null;
             }

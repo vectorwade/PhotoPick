@@ -48,9 +48,17 @@ public class ThumbnailLoaderQueue
         }
     }
 
+    private static readonly ConcurrentDictionary<string, System.Windows.Media.Imaging.BitmapSource> MemoryCache = new(StringComparer.OrdinalIgnoreCase);
+
     public void Enqueue(PhotoViewModel item)
     {
         if (item.Thumbnail != null) return;
+
+        if (MemoryCache.TryGetValue(item.FilePath, out var cached) && cached != null)
+        {
+            item.Thumbnail = cached;
+            return;
+        }
 
         lock (_lock)
         {
@@ -100,6 +108,7 @@ public class ThumbnailLoaderQueue
                         {
                             ImageQualityHelper.AnalyzeAndApply(bmp, item.Model);
 
+                            MemoryCache[item.FilePath] = bmp;
                             await Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 item.Thumbnail = bmp;

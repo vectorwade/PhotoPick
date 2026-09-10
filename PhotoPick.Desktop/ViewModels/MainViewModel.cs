@@ -338,6 +338,8 @@ public class MainViewModel : INotifyPropertyChanged
                 _isSingleViewMode = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsGridViewMode));
+                OnPropertyChanged(nameof(ViewModeLabel));
+                OnPropertyChanged(nameof(ViewModeToolTip));
                 if (_isSingleViewMode && SelectedPhoto != null)
                 {
                     _ = LoadLoupeImageAsync(SelectedPhoto);
@@ -347,6 +349,8 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     public bool IsGridViewMode => !IsSingleViewMode;
+    public string ViewModeLabel => IsSingleViewMode ? "⊞ Modo Grade" : "🔍 Foto Única";
+    public string ViewModeToolTip => IsSingleViewMode ? "Voltar para a Grade de Fotos [Espaço]" : "Ver Foto Única ampliada [Espaço]";
 
     public void SelectPhoto(PhotoViewModel? p) => SelectedPhoto = p;
     public PhotoViewModel? SelectedPhoto
@@ -400,6 +404,7 @@ public class MainViewModel : INotifyPropertyChanged
     public string CurrentDirectory => _session.CurrentDirectory ?? "Nenhuma pasta selecionada";
     public int TotalCount => _session.TotalCount;
     public int PickedCount => _session.PickedCount;
+    public int DoubtCount => _session.DoubtCount;
     public int RejectedCount => _session.RejectedCount;
     public int UnflaggedCount => _session.UnflaggedCount;
     public int UnsavedCount => _session.UnsavedCount;
@@ -474,7 +479,7 @@ public class MainViewModel : INotifyPropertyChanged
             int count = await _session.LoadDirectoryAsync(directoryPath);
             RebuildViewModels();
             RebuildFormatList();
-            StatusMessage = $"{count} fotos carregadas. Use os botões ou atalhos: 'P' para Pick, 'X' para Reject, '1-5' para Estrelas.";
+            StatusMessage = $"{count} fotos carregadas. Use os botões ou atalhos: [P] Escolher, [X] Rejeitar, [D] Dúvida, [U] Limpar, [1-5] Notas.";
 
             if (Photos.Count > 0)
             {
@@ -507,8 +512,9 @@ public class MainViewModel : INotifyPropertyChanged
         _session.ApplyFilter(mode);
         FilterName = mode switch
         {
-            PhotoFilterMode.PickedOnly => "Selecionadas (P)",
-            PhotoFilterMode.RejectedOnly => "Rejeitadas (X)",
+            PhotoFilterMode.PickedOnly => "Selecionadas [P]",
+            PhotoFilterMode.DoubtOnly => "Dúvidas para Revisão [D]",
+            PhotoFilterMode.RejectedOnly => "Rejeitadas [X]",
             PhotoFilterMode.UnflaggedOnly => "Não Avaliadas",
             PhotoFilterMode.RatedOnly => "Com Estrelas",
             PhotoFilterMode.Rating5 => "★ 5 Estrelas",
@@ -788,8 +794,18 @@ public class MainViewModel : INotifyPropertyChanged
         if (SelectedPhoto == null) return;
         SelectedPhoto.IsPicked = !SelectedPhoto.IsPicked;
         StatusMessage = SelectedPhoto.IsPicked
-            ? $"[PICK] Selecionada! 1 Estrela + Rótulo Verde + Aura Verde ({SelectedPhoto.FileName})"
-            : $"Seleção removida ({SelectedPhoto.FileName})";
+            ? $"Escolhida! ({SelectedPhoto.FileName})"
+            : $"Escolha removida ({SelectedPhoto.FileName})";
+        if (IsAutoAdvanceEnabled) NextPhoto();
+    }
+
+    public void ToggleDoubtSelected()
+    {
+        if (SelectedPhoto == null) return;
+        SelectedPhoto.IsDoubt = !SelectedPhoto.IsDoubt;
+        StatusMessage = SelectedPhoto.IsDoubt
+            ? $"Marcada como Dúvida para revisão posterior ({SelectedPhoto.FileName})"
+            : $"Dúvida removida ({SelectedPhoto.FileName})";
         if (IsAutoAdvanceEnabled) NextPhoto();
     }
 
@@ -798,7 +814,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (SelectedPhoto == null) return;
         SelectedPhoto.IsRejected = !SelectedPhoto.IsRejected;
         StatusMessage = SelectedPhoto.IsRejected
-            ? $"[REJECT] Rejeitada! Rótulo Vermelho + Aura Vermelha ({SelectedPhoto.FileName})"
+            ? $"Rejeitada! ({SelectedPhoto.FileName})"
             : $"Rejeição removida ({SelectedPhoto.FileName})";
         if (IsAutoAdvanceEnabled) NextPhoto();
     }
@@ -1007,6 +1023,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentDirectoryPath));
         OnPropertyChanged(nameof(TotalCount));
         OnPropertyChanged(nameof(PickedCount));
+        OnPropertyChanged(nameof(DoubtCount));
         OnPropertyChanged(nameof(RejectedCount));
         OnPropertyChanged(nameof(UnflaggedCount));
         OnPropertyChanged(nameof(UnsavedCount));

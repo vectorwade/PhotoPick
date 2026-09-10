@@ -17,6 +17,10 @@ public partial class MainWindow : Window
 {
     public MainViewModel ViewModel => (MainViewModel)DataContext;
     private readonly GamepadService _gamepadService;
+    private bool _isPanning;
+    private Point _panStartPoint;
+    private Point _panStartTranslate;
+    private bool _isLoupeZoomed;
 
     public MainWindow()
     {
@@ -67,13 +71,23 @@ public partial class MainWindow : Window
 
     private void LogoHome_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel != null)
+        if (ViewModel == null) return;
+
+        // Se houver fotos carregadas e a tela de boas-vindas estiver visível, fecha e volta ao workspace ativo
+        if (ViewModel.Photos.Count > 0 && ViewModel.IsWelcomeScreenVisible)
         {
-            ViewModel.IsWelcomeScreenVisible = !ViewModel.IsWelcomeScreenVisible;
-            if (WelcomeOverlayGrid != null)
-            {
-                WelcomeOverlayGrid.Visibility = ViewModel.IsWelcomeScreenVisible ? Visibility.Visible : Visibility.Collapsed;
-            }
+            ViewModel.IsWelcomeScreenVisible = false;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+        }
+        else if (ViewModel.Photos.Count > 0 && !ViewModel.IsWelcomeScreenVisible)
+        {
+            ViewModel.IsWelcomeScreenVisible = true;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ViewModel.IsWelcomeScreenVisible = true;
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Visible;
         }
     }
 
@@ -99,7 +113,7 @@ public partial class MainWindow : Window
         if (GamepadFlyoutPopup != null) GamepadFlyoutPopup.IsOpen = !GamepadFlyoutPopup.IsOpen;
     }
 
-    private void BtnViewMode_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleViewMode();
+    private void BtnViewMode_Click(object sender, RoutedEventArgs e) { ResetLoupeZoom(); ViewModel.ToggleViewMode(); }
     private void BtnAutoAdvance_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleAutoAdvance();
     private async void BtnLightroom_Click(object sender, RoutedEventArgs e) => await ViewModel.SyncAndOpenLightroomAsync();
     private async void BtnExport_Click(object sender, RoutedEventArgs e) => await ViewModel.ExportSelectedToFolderAsync();
@@ -151,6 +165,7 @@ public partial class MainWindow : Window
 
     private void FilterAll_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.All);
     private void FilterPicked_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.PickedOnly);
+    private void FilterDoubt_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.DoubtOnly);
     private void FilterRejected_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.RejectedOnly);
     private void FilterUnflagged_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.UnflaggedOnly);
 
@@ -180,6 +195,15 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CardBtnDoubt_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
+        {
+            ViewModel.SelectedPhoto = photo;
+            ViewModel.ToggleDoubtSelected();
+        }
+    }
+
     private void CardBtnReject_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: PhotoViewModel photo })
@@ -206,19 +230,107 @@ public partial class MainWindow : Window
 
     #endregion
 
-    #region Modo Loupe / Foto Única
+    #region Modo Loupe / Foto Única & Zoom Interativo
 
-    private void LoupeImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    public void ToggleLoupeZoom()
+    {
+        _isLoupeZoomed = !_isLoupeZoomed;
+        if (_isLoupeZoomed)
+        {
+            if (LoupeScaleTransform != null)
+            {
+                LoupeScaleTransform.ScaleX = 2.5;
+                LoupeScaleTransform.ScaleY = 2.5;
+            }
+            if (LoupeZoomBtnText != null) LoupeZoomBtnText.Text = "🔍 Ajustar";
+        }
+        else
+        {
+            ResetLoupeZoom();
+        }
+    }
+
+    public void ResetLoupeZoom()
+    {
+        _isLoupeZoomed = false;
+        if (LoupeScaleTransform != null)
+        {
+            LoupeScaleTransform.ScaleX = 1.0;
+            LoupeScaleTransform.ScaleY = 1.0;
+        }
+        if (LoupeTranslateTransform != null)
+        {
+            LoupeTranslateTransform.X = 0;
+            LoupeTranslateTransform.Y = 0;
+        }
+        if (LoupeZoomBtnText != null) LoupeZoomBtnText.Text = "🔍 100%";
+    }
+
+    private void BtnToggleLoupeZoom_Click(object sender, RoutedEventArgs e) => ToggleLoupeZoom();
+
+    private void LoupeContainer_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (LoupeScaleTransform == null || LoupeTranslateTransform == null) return;
+
+        double factor = e.Delta > 0 ? 1.25 : 0.8;
+        double newScale = Math.Clamp(LoupeScaleTransform.ScaleX * factor, 0.8, 6.0);
+
+        if (newScale <= 1.05)
+        {
+            ResetLoupeZoom();
+        }
+        else
+        {
+            _isLoupeZoomed = true;
+            LoupeScaleTransform.ScaleX = newScale;
+            LoupeScaleTransform.ScaleY = newScale;
+            if (LoupeZoomBtnText != null) LoupeZoomBtnText.Text = "🔍 Ajustar";
+        }
+        e.Handled = true;
+    }
+
+    private void LoupeContainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2)
         {
-            ViewModel.ToggleViewMode();
+            ToggleLoupeZoom();
+            e.Handled = true;
+            return;
+        }
+
+        if (_isLoupeZoomed && sender is UIElement elem)
+        {
+            _isPanning = true;
+            _panStartPoint = e.GetPosition(this);
+            _panStartTranslate = new Point(LoupeTranslateTransform.X, LoupeTranslateTransform.Y);
+            elem.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void LoupeContainer_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isPanning && LoupeTranslateTransform != null)
+        {
+            Point current = e.GetPosition(this);
+            LoupeTranslateTransform.X = _panStartTranslate.X + (current.X - _panStartPoint.X);
+            LoupeTranslateTransform.Y = _panStartTranslate.Y + (current.Y - _panStartPoint.Y);
+        }
+    }
+
+    private void LoupeContainer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isPanning)
+        {
+            _isPanning = false;
+            (sender as UIElement)?.ReleaseMouseCapture();
         }
     }
 
     private void BtnFocusPeaking_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleFocusPeaking();
     private void BtnPickBurstBest_Click(object sender, RoutedEventArgs e) => ViewModel.PickCurrentBurstBest();
     private void BtnLoupePick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
+    private void BtnLoupeDoubt_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleDoubtSelected();
     private void BtnLoupeReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
     private void BtnLoupeClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
 
@@ -233,6 +345,7 @@ public partial class MainWindow : Window
     private void InspectorStar5_Click(object sender, MouseButtonEventArgs e) => ViewModel.RateSelected(5);
 
     private void BtnInspectorPick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
+    private void BtnInspectorDoubt_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleDoubtSelected();
     private void BtnInspectorReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
     private void BtnInspectorClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
 
@@ -264,6 +377,11 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
+            case Key.D:
+                ViewModel.ToggleDoubtSelected();
+                e.Handled = true;
+                break;
+
             case Key.X:
                 ViewModel.ToggleRejectSelected();
                 e.Handled = true;
@@ -279,6 +397,11 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
+            case Key.Z:
+                ToggleLoupeZoom();
+                e.Handled = true;
+                break;
+
             case Key.D1 or Key.NumPad1: ViewModel.RateSelected(1); e.Handled = true; break;
             case Key.D2 or Key.NumPad2: ViewModel.RateSelected(2); e.Handled = true; break;
             case Key.D3 or Key.NumPad3: ViewModel.RateSelected(3); e.Handled = true; break;
@@ -286,27 +409,32 @@ public partial class MainWindow : Window
             case Key.D5 or Key.NumPad5: ViewModel.RateSelected(5); e.Handled = true; break;
             case Key.D0 or Key.NumPad0: ViewModel.RateSelected(0); e.Handled = true; break;
 
-            case Key.Right or Key.D:
+            case Key.Right:
+                ResetLoupeZoom();
                 ViewModel.NextPhoto();
                 e.Handled = true;
                 break;
 
-            case Key.Left or Key.A:
+            case Key.Left:
+                ResetLoupeZoom();
                 ViewModel.PreviousPhoto();
                 e.Handled = true;
                 break;
 
-            case Key.Up or Key.W:
+            case Key.Up:
+                ResetLoupeZoom();
                 ViewModel.NavigateGridUp();
                 e.Handled = true;
                 break;
 
-            case Key.Down or Key.S when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+            case Key.Down when !Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                ResetLoupeZoom();
                 ViewModel.NavigateGridDown();
                 e.Handled = true;
                 break;
 
             case Key.Space or Key.Enter:
+                ResetLoupeZoom();
                 ViewModel.ToggleViewMode();
                 e.Handled = true;
                 break;
