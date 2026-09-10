@@ -46,6 +46,9 @@ public class CullingSession
     public bool? CurrentFlashFilter { get; private set; }
     public string? CurrentFormatFilter { get; private set; }
 
+    public IRawPreviewExtractor Extractor => _extractor;
+    public IThumbnailCacheService CacheService => _cacheService;
+
     public Dictionary<string, int> FormatCounts => _allPhotos
         .GroupBy(p => p.Extension.ToUpperInvariant())
         .ToDictionary(g => g.Key, g => g.Count());
@@ -165,8 +168,7 @@ public class CullingSession
         ApplyFilter(CurrentFilter);
         StatsChanged?.Invoke();
 
-        // Iniciar extração de thumbnails em background para os itens sem cache
-        _ = StartBackgroundThumbnailExtractionAsync(_bgThumbCts.Token);
+        // A extração priorizada e o cache de thumbnails são gerenciados de forma ágil pela ThumbnailLoaderQueue na camada Desktop
 
         return _allPhotos.Count;
     }

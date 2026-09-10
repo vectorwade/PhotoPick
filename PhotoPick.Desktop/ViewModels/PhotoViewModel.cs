@@ -8,6 +8,7 @@ using System.Windows.Media.Effects;
 using PhotoPick.Core.Models;
 using PhotoPick.Core.Services;
 using PhotoPick.Desktop.Helpers;
+using PhotoPick.Desktop.Services;
 
 namespace PhotoPick.Desktop.ViewModels;
 
@@ -309,6 +310,13 @@ public class PhotoViewModel : INotifyPropertyChanged
     {
         _model = model;
         _session = session;
+
+        // Recuperação instantânea do cache em memória para rolagem e filtros sem telas pretas
+        if (ThumbnailLoaderQueue.TryGetCached(model.FilePath, out var cached) && cached != null)
+        {
+            _thumbnail = cached;
+        }
+
         _model.PropertyChanged += (s, e) =>
         {
             OnPropertyChanged(e.PropertyName);

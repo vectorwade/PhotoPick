@@ -83,4 +83,12 @@ public class DoubtFilterTests
         string? actual = RawPreviewExtractor.NormalizeCameraModel(make, model);
         Assert.Equal(expected, actual);
     }
+
+    [Fact]
+    public void CullingSession_ExposesExtractorAndCacheService()
+    {
+        var session = new CullingSession();
+        Assert.NotNull(session.Extractor);
+        Assert.NotNull(session.CacheService);
+    }
 }

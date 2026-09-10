@@ -43,7 +43,7 @@ public class MainViewModel : INotifyPropertyChanged
     public CullingSession Session => _session;
     public ObservableCollection<PhotoViewModel> Photos { get; } = [];
     public ObservableCollection<PhotoRowViewModel> Rows { get; } = [];
-    public ObservableCollection<string> CameraList { get; } = ["Todas as Câmeras", "Nikon Z6 III", "Canon EOS Rebel T6i", "Sony ILCE-7M4"];
+    public ObservableCollection<string> CameraList { get; } = ["Todas as Câmeras"];
 
     public string WindowTitle => "Mavi Select";
 
@@ -373,9 +373,16 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(SelectedPhotoBrightnessPercent));
                 OnPropertyChanged(nameof(SelectedPhotoQualityText));
                 OnPropertyChanged(nameof(SelectedPhotoQualityBrush));
-                if (IsSingleViewMode && _selectedPhoto != null)
+                if (_selectedPhoto != null)
                 {
-                    _ = LoadLoupeImageAsync(_selectedPhoto);
+                    if (_selectedPhoto.Thumbnail == null)
+                    {
+                        _ = _loaderQueue.LoadThumbnailDirectAsync(_selectedPhoto);
+                    }
+                    if (IsSingleViewMode)
+                    {
+                        _ = LoadLoupeImageAsync(_selectedPhoto);
+                    }
                 }
             }
         }
@@ -427,7 +434,7 @@ public class MainViewModel : INotifyPropertyChanged
         _extractor = new RawPreviewExtractor();
         _session = new CullingSession(extractor: _extractor);
         _lightroomService = new LightroomService();
-        _loaderQueue = new ThumbnailLoaderQueue(_session);
+        _loaderQueue = new ThumbnailLoaderQueue(_session, _extractor, _session.CacheService);
         _loaderQueue.Start();
 
         _session.StatsChanged += RefreshStats;
@@ -488,9 +495,9 @@ public class MainViewModel : INotifyPropertyChanged
                 if (!RecentFolders.Contains(directoryPath)) { RecentFolders.Insert(0, directoryPath); }
             }
 
-            // Inicia fila de carregamento de thumbnails em background controlado
+            // Dispara extração imediata dos previews visíveis na grade e enfileira o restante
             _loaderQueue.Start();
-            _loaderQueue.EnqueueBatch(Photos);
+            _loaderQueue.PrioritizeAndEnqueue(Photos);
         }
         catch (Exception ex)
         {
@@ -670,7 +677,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (PickedCount == 0)
         {
-            MessageBox.Show("Nenhuma foto marcada como Selecionada (Pick). Marque algumas fotos com a tecla 'P' ou botão verde antes de exportar.", "MaviSelect", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Nenhuma foto marcada como Escolhida. Marque algumas fotos com a tecla 'P' ou botão verde 'Escolher' antes de exportar.", "MaviSelect", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -948,6 +955,9 @@ public class MainViewModel : INotifyPropertyChanged
         {
             SelectedPhoto = Photos.FirstOrDefault();
         }
+
+        // Prioriza imediatamente os visíveis e enfileira o restante sempre que a visualização for reconstruída
+        _loaderQueue.PrioritizeAndEnqueue(Photos);
     }
 
     private async Task LoadLoupeImageAsync(PhotoViewModel photo)
