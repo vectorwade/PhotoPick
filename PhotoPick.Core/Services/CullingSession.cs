@@ -294,16 +294,19 @@ public class CullingSession
 
     public async Task<int> SaveOnlySelectedXmpAsync(IEnumerable<PhotoItem>? targetItems = null, CancellationToken ct = default)
     {
-        var selected = (targetItems ?? _allPhotos.Where(p => p.IsPicked)).Where(p => p.IsPicked).ToList();
-        var unselected = _allPhotos.Where(p => !p.IsPicked && (p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel) || p.HasXmp)).ToList();
+        var targetList = (targetItems ?? _allPhotos.Where(p => p.IsPicked || p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel))).ToList();
+        var selected = targetList.Where(p => p.IsPicked || p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel)).ToList();
+        var unselected = _allPhotos.Except(selected).Where(p => p.HasXmp || _xmpService.XmpExists(p.FilePath)).ToList();
 
         // 1. Grava metadados XMP apenas nas selecionadas
         foreach (var item in selected)
         {
             ct.ThrowIfCancellationRequested();
-            if (item.Rating == 0) item.Rating = 1;
-            if (string.IsNullOrEmpty(item.ColorLabel)) item.ColorLabel = "Green";
-            _xmpService.WriteMetadata(item.FilePath, item.Rating, item.ColorLabel);
+            int effectiveRating = item.Rating > 0 ? item.Rating : 1;
+            string effectiveLabel = !string.IsNullOrEmpty(item.ColorLabel) ? item.ColorLabel : "Green";
+            _xmpService.WriteMetadata(item.FilePath, effectiveRating, effectiveLabel);
+            item.Rating = effectiveRating;
+            item.ColorLabel = effectiveLabel;
             item.IsModified = false;
         }
 

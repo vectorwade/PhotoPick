@@ -195,6 +195,11 @@ public partial class MainWindow : Window
     private async void BtnExport_Click(object sender, RoutedEventArgs e) => await ViewModel.ExportSelectedToFolderAsync();
     private void BtnHelp_Click(object sender, RoutedEventArgs e) => ViewModel.OpenHelpModal();
     private void BtnCloseHelp_Click(object sender, RoutedEventArgs e) => ViewModel.CloseHelpModal();
+    private void BtnCloseLightroomModal_Click(object sender, RoutedEventArgs e) => ViewModel.CloseLightroomModal();
+    private void LightroomModalBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => ViewModel.CloseLightroomModal();
+    private void LightroomModalCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
+    private async void ModalBtnInPlace_Click(object sender, MouseButtonEventArgs e) => await ViewModel.SendToLightroomInPlaceAsync();
+    private async void ModalBtnSubfolder_Click(object sender, MouseButtonEventArgs e) => await ViewModel.SendToLightroomViaSubfolderAsync();
     private void HelpModalBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => ViewModel.CloseHelpModal();
     private void HelpModalCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
@@ -701,6 +706,24 @@ public partial class MainWindow : Window
         switch (e.Key)
         {
             case Key.Escape:
+                if (ViewModel.IsLightroomModalOpen)
+                {
+                    ViewModel.CloseLightroomModal();
+                    e.Handled = true;
+                    return;
+                }
+                if (ViewModel.IsHelpModalOpen)
+                {
+                    ViewModel.CloseHelpModal();
+                    e.Handled = true;
+                    return;
+                }
+                if (ViewModel.IsMetadataModalOpen)
+                {
+                    ViewModel.CloseMetadataModal();
+                    e.Handled = true;
+                    return;
+                }
                 if (ViewModel.IsWelcomeScreenVisible && ViewModel.Photos.Count > 0)
                 {
                     ViewModel.IsWelcomeScreenVisible = false;

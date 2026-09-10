@@ -1576,6 +1576,116 @@
         </Grid>
 
         <!-- ============================================================== -->
+        <!-- ============================================================== -->
+        <!-- MODAL DE SINCRONIZAÇÃO COM O LIGHTROOM CLASSIC                -->
+        <!-- ============================================================== -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="9997" Background="#D9000000"
+              MouseLeftButtonDown="LightroomModalBackdrop_MouseLeftButtonDown"
+              Visibility="{Binding IsLightroomModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="#121214" BorderBrush="#1B3A57" BorderThickness="1.5"
+                    CornerRadius="14" Padding="32,28" Width="640" MaxHeight="620"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MouseLeftButtonDown="LightroomModalCard_MouseLeftButtonDown">
+                <Border.Effect>
+                    <DropShadowEffect Color="#001E36" BlurRadius="45" ShadowDepth="10" Opacity="0.9"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Botão Fechar no Topo Direito -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Style="{StaticResource CaptionBtn}" Click="BtnCloseLightroomModal_Click"
+                            ToolTip="Fechar [Esc]">
+                        <TextBlock Text="✕" FontSize="14" Foreground="{DynamicResource TextMuted}"/>
+                    </Button>
+
+                    <!-- Cabeçalho com Badge Lr Oficial -->
+                    <Grid Grid.Row="0" Margin="0,0,30,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Badge Lr -->
+                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="8"
+                                Background="#001E36" BorderBrush="#31A8FF" BorderThickness="1.5" Margin="0,0,16,0">
+                            <TextBlock Text="Lr" FontSize="24" FontWeight="Bold" Foreground="#31A8FF"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Sincronizar com Adobe Lightroom Classic" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,4"/>
+                            <TextBlock FontSize="12.5" Foreground="{DynamicResource TextMuted}">
+                                <Run Text="Foram identificadas "/><Run Text="{Binding SelectedToSendCount, Mode=OneWay}" FontWeight="Bold" Foreground="#31A8FF"/><Run Text=" fotografias selecionadas para envio."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Opções de Sincronização -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,24">
+                        <TextBlock Text="COMO VOCÊ DESEJA SINCRONIZAR COM O LIGHTROOM?" FontSize="10" FontWeight="Bold"
+                                   Foreground="#31A8FF" Margin="0,0,0,12"/>
+
+                        <!-- Opção 1: Gravar Metadados XMP e Abrir no Lightroom (Recomendado) -->
+                        <Border Background="#1A222D" BorderBrush="#31A8FF" BorderThickness="1.5" CornerRadius="8"
+                                Padding="16,14" Margin="0,0,0,12" Cursor="Hand"
+                                MouseLeftButtonDown="ModalBtnInPlace_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="⚡" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Gravar Metadados XMP e Abrir Lightroom" FontWeight="Bold" FontSize="13" Foreground="#31A8FF"/>
+                                        <Border Background="#0D3859" BorderBrush="#31A8FF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="10,0,0,0">
+                                            <TextBlock Text="MAIS RÁPIDO &amp; DIRETO" FontSize="9" FontWeight="Bold" Foreground="#31A8FF"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Mantém todas as fotos na pasta original e gera arquivos sidecar .xmp contendo as estrelas, marcas de seleção e rótulos de cor. O Lightroom Classic é aberto diretamente apontando para este ensaio."
+                                               Foreground="#CCCCCC" FontSize="11.5" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Opção 2: Criar Subpasta com Selecionadas -->
+                        <Border Background="#1E1E22" BorderBrush="#38383E" BorderThickness="1" CornerRadius="8"
+                                Padding="16,14" Margin="0,0,0,10" Cursor="Hand"
+                                MouseLeftButtonDown="ModalBtnSubfolder_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="📁" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Criar Pasta '_SELECIONADAS_LIGHTROOM' e Abrir" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF"/>
+                                        <Border Background="#252525" CornerRadius="3" Padding="5,1" Margin="10,0,0,0">
+                                            <TextBlock Text="ISOLAR ARQUIVOS" FontSize="9" FontWeight="Bold" Foreground="#888888"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Copia exclusivamente as fotos escolhidas e seus metadados .xmp para uma subpasta separada. O Lightroom abre mostrando apenas as fotos selecionadas na importação (zero fotos rejeitadas)."
+                                               Foreground="#AAAAAA" FontSize="11.5" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Rodapé com Botão Cancelar -->
+                    <Grid Grid.Row="2">
+                        <Button HorizontalAlignment="Right" Click="BtnCloseLightroomModal_Click"
+                                Padding="20,8" Background="#252525" BorderBrush="#383838" BorderThickness="1" Cursor="Hand">
+                            <TextBlock Text="Cancelar [Esc]" FontSize="11.5" Foreground="#AAAAAA"/>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
         <!-- OVERLAY DE LICENÇA / TRIAL LOCK (ANTIGRAVITY DARK STYLE)       -->
         <!-- ============================================================== -->
         <Grid Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="9999" Background="#CC000000"

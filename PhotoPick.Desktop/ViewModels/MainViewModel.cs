@@ -887,8 +887,13 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 return _session.FilteredPhotos.Count;
             }
-            int count = _session.FilteredPhotos.Count(p => p.IsPicked);
-            return count > 0 ? count : _session.PickedCount;
+            int count = _session.FilteredPhotos.Count(p => p.IsPicked || p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel));
+            if (count > 0) return count;
+
+            int totalPicked = _session.PickedCount;
+            if (totalPicked > 0) return totalPicked;
+
+            return _session.TotalCount > 0 ? _session.FilteredPhotos.Count(p => p.Rating > 0) : 0;
         }
     }
 
@@ -990,7 +995,7 @@ public class MainViewModel : INotifyPropertyChanged
             return _session.FilteredPhotos.ToList();
         }
 
-        var picked = _session.FilteredPhotos.Where(p => p.IsPicked).ToList();
+        var picked = _session.FilteredPhotos.Where(p => p.IsPicked || p.Rating > 0 || !string.IsNullOrEmpty(p.ColorLabel)).ToList();
         if (picked.Count > 0) return picked;
 
         return _session.FilteredPhotos.ToList();
