@@ -1024,12 +1024,23 @@
                     <TextBlock Text="Triagem ultrarrápida de fotos para criadores e fotógrafos"
                                FontSize="12" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,0,0,24"/>
 
-                    <!-- Botão Principal Verde: Iniciar Novo Projeto (Abrir Pasta) -->
+                    <!-- Botão Principal Verde: Iniciar Novo Projeto (com Miniaturas) -->
                     <Button Style="{StaticResource PrimaryActionBtn}" Click="BtnWelcomeOpenFolder_Click"
-                            Padding="24,12" Margin="0,0,0,12" HorizontalAlignment="Stretch">
+                            Padding="24,12" Margin="0,0,0,8" HorizontalAlignment="Stretch"
+                            ToolTip="Abre o explorador exibindo todas as fotos com miniaturas para você conferir antes de carregar">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <TextBlock Text="📂 " FontSize="14"/>
-                            <TextBlock Text="Iniciar Novo Projeto (Abrir Pasta)" FontSize="13" FontWeight="Bold"/>
+                            <TextBlock Text="🖼️ " FontSize="14"/>
+                            <TextBlock Text="Selecionar Fotos / Ensaio (Ver Miniaturas)" FontSize="13" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Botão Secundário: Selecionar Pasta Direta pelo Windows -->
+                    <Button Style="{StaticResource IdeToolBtn}" Click="BtnWelcomeFolderOnly_Click"
+                            Background="#252525" Padding="16,8" Margin="0,0,0,12" HorizontalAlignment="Stretch"
+                            ToolTip="Selecionar uma pasta inteira no modo clássico de diretórios do Windows">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="📁 " FontSize="12"/>
+                            <TextBlock Text="Selecionar Pasta Direta pelo Windows..." FontSize="11.5" Foreground="{DynamicResource TextNormal}"/>
                         </StackPanel>
                     </Button>
 

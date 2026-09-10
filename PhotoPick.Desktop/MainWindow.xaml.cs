@@ -209,7 +209,49 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private async void BtnWelcomeFolderOnly_Click(object sender, RoutedEventArgs e)
+    {
+        await PromptSelectFolderOnlyAsync();
+    }
+
     private async Task PromptOpenFolderAsync()
+    {
+        // Usa OpenFileDialog com multiselect para que o Windows EXIBA todas as fotos e suas miniaturas!
+        // No OpenFolderDialog tradicional, o Windows esconde todos os arquivos e exibe apenas pastas.
+        var dialog = new OpenFileDialog
+        {
+            Title = "Mavi Select — Selecione qualquer foto para abrir a pasta correspondente (Miniaturas Visíveis)",
+            Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os Arquivos (*.*)|*.*",
+            Multiselect = true,
+            InitialDirectory = ViewModel.Session.CurrentDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
+        {
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+            string? dir = Path.GetDirectoryName(dialog.FileNames[0]);
+            if (!string.IsNullOrEmpty(dir) && ViewModel != null)
+            {
+                await ViewModel.LoadDirectoryAsync(dir);
+
+                // Foca imediatamente na foto selecionada no diálogo
+                string selectedFile = Path.GetFileName(dialog.FileNames[0]);
+                var match = ViewModel.Photos.FirstOrDefault(p => string.Equals(p.FileName, selectedFile, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    ViewModel.SelectedPhoto = match;
+                }
+
+                ViewModel.IsWelcomeScreenVisible = false;
+            }
+
+            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async Task PromptSelectFolderOnlyAsync()
     {
         var dialog = new OpenFolderDialog
         {
