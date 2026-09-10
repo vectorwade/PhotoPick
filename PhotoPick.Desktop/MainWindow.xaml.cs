@@ -288,11 +288,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            // Usa OpenFileDialog para que o Windows Explorer EXIBA as miniaturas de todas as fotos
-            // dentro da pasta antes de confirmar (o OpenFolderDialog tradicional do Windows oculta todos os arquivos).
             var dialog = new OpenFileDialog
             {
-                Title = "Mavi Select — Selecione qualquer foto para abrir a pasta correspondente (Miniaturas Visíveis)",
+                Title = "Mavi Select — Selecionar Fotos (Miniaturas Visíveis)",
                 Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os Arquivos (*.*)|*.*",
                 Multiselect = true,
                 InitialDirectory = GetSafeInitialDirectory()
@@ -326,7 +324,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Não foi possível abrir o seletor: {ex.Message}",
+                $"Não foi possível abrir o seletor de fotos: {ex.Message}",
                 "Aviso — Mavi Select",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -335,9 +333,39 @@ public partial class MainWindow : Window
 
     private async Task PromptSelectFolderOnlyAsync()
     {
-        // Redireciona para PromptOpenFolderAsync para que as miniaturas das fotos
-        // fiquem 100% visíveis no diálogo do Windows, permitindo conferência visual antes de abrir a pasta!
-        await PromptOpenFolderAsync();
+        try
+        {
+            // Seletor de diretório nativo para selecionar a pasta diretamente
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Mavi Select — Selecionar Pasta com Fotos",
+                InitialDirectory = GetSafeInitialDirectory(),
+                Multiselect = false
+            };
+
+            bool? result = dialog.ShowDialog(this);
+            if (result == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+            {
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+                if (ViewModel != null)
+                {
+                    await ViewModel.LoadDirectoryAsync(dialog.FolderName);
+                    ViewModel.IsWelcomeScreenVisible = false;
+                }
+
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Não foi possível abrir a pasta selecionada: {ex.Message}",
+                "Aviso — Mavi Select",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private void FilterAll_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.All);
@@ -785,26 +813,40 @@ public partial class MainWindow : Window
 
     private async void Window_Drop(object sender, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-
-        var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-        if (paths == null || paths.Length == 0) return;
-
-        string target = paths[0];
-        if (File.Exists(target))
+        try
         {
-            target = Path.GetDirectoryName(target) ?? target;
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+            var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (paths == null || paths.Length == 0) return;
+
+            string target = paths[0];
+            if (File.Exists(target))
+            {
+                target = Path.GetDirectoryName(target) ?? target;
+            }
+
+            if (Directory.Exists(target))
+            {
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+                if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+
+                if (ViewModel != null)
+                {
+                    await ViewModel.LoadDirectoryAsync(target);
+                    ViewModel.IsWelcomeScreenVisible = false;
+                }
+
+                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
+            }
         }
-
-        if (Directory.Exists(target))
+        catch (Exception ex)
         {
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
-
-            if (ViewModel != null) await ViewModel.LoadDirectoryAsync(target);
-
-            if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-            if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
+            MessageBox.Show(
+                $"Não foi possível carregar a pasta arrastada: {ex.Message}",
+                "Aviso — Mavi Select",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 

@@ -78,7 +78,7 @@ public class ThumbnailLoaderQueue
 
         if (MemoryCache.TryGetValue(item.FilePath, out var cached) && cached != null)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => item.Thumbnail = cached);
+            await DispatchAsync(() => item.Thumbnail = cached);
             return cached;
         }
 
@@ -91,7 +91,7 @@ public class ThumbnailLoaderQueue
                 if (diskBmp != null)
                 {
                     MemoryCache[item.FilePath] = diskBmp;
-                    await Application.Current.Dispatcher.InvokeAsync(() => item.Thumbnail = diskBmp);
+                    await DispatchAsync(() => item.Thumbnail = diskBmp);
 
                     // Se os metadados estiverem ausentes no cache antigo, extrai em background e atualiza o modelo e o banco
                     if (string.IsNullOrEmpty(item.Model.CameraModel) || !item.Model.Iso.HasValue)
@@ -103,7 +103,7 @@ public class ThumbnailLoaderQueue
                                 var metaRes = await _extractor.ExtractPreviewAsync(item.FilePath, ct);
                                 if (metaRes.Success)
                                 {
-                                    await Application.Current.Dispatcher.InvokeAsync(() => item.ApplyMetadata(metaRes));
+                                    await DispatchAsync(() => item.ApplyMetadata(metaRes));
                                     await _session.SavePhotoMetadataAsync(item.Model);
                                 }
                             }
@@ -141,7 +141,7 @@ public class ThumbnailLoaderQueue
                     if (res.DateTaken.HasValue) item.Model.DateTaken ??= res.DateTaken;
 
                     // Publica na UI imediatamente
-                    await Application.Current.Dispatcher.InvokeAsync(() => item.Thumbnail = bmp);
+                    await DispatchAsync(() => item.Thumbnail = bmp);
 
                     // Em background desacoplado: persiste no cache de disco, analisa qualidade e atualiza o banco
                     _ = Task.Run(async () =>
@@ -259,6 +259,15 @@ public class ThumbnailLoaderQueue
                     _inQueue.Remove(item.FilePath);
                 }
             }
+        }
+    }
+
+    private static async Task DispatchAsync(Action action)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher != null)
+        {
+            await dispatcher.InvokeAsync(action);
         }
     }
 }

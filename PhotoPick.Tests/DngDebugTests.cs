@@ -89,4 +89,22 @@ public class DngDebugTests
 
         Assert.NotEmpty(items);
     }
+
+    [Fact]
+    public async Task TestCullingSessionLoadDjiFolder()
+    {
+        string dir = @"H:\DCIM\DJI_001";
+        if (!Directory.Exists(dir)) return;
+
+        var session = new CullingSession();
+        int statsTriggerCount = 0;
+        session.StatsChanged += () => statsTriggerCount++;
+
+        int count = await session.LoadDirectoryAsync(dir);
+        Assert.True(count > 0);
+        Assert.True(session.TotalCount > 0);
+        Assert.True(statsTriggerCount > 0);
+        Assert.NotEmpty(session.AvailableCameras);
+    }
 }
+

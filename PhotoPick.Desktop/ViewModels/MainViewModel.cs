@@ -33,6 +33,11 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _isAutoAdvanceEnabled = true;
     private bool _isFocusPeakingActive;
     private bool _isHelpModalOpen;
+    private bool _isUpdatingCameraList;
+    private bool _isUpdatingFlashFilter;
+    private bool _isUpdatingFormat;
+    private bool _isRebuildingViewModels;
+    private bool _isRefreshingStats;
     private PhotoViewModel? _selectedPhoto;
     private ImageSource? _loupeImage;
     private ImageSource? _peakingOverlayImage;
@@ -85,14 +90,23 @@ public class MainViewModel : INotifyPropertyChanged
         get => _selectedFormat;
         set
         {
+            if (_isUpdatingFormat) return;
             if (_selectedFormat != value)
             {
                 _selectedFormat = value;
                 OnPropertyChanged();
                 _session.SetFormatFilter(value);
                 RebuildViewModels();
-            RebuildFormatList();
-                UpdateFormatSelection();
+                try
+                {
+                    _isUpdatingFormat = true;
+                    RebuildFormatList();
+                    UpdateFormatSelection();
+                }
+                finally
+                {
+                    _isUpdatingFormat = false;
+                }
             }
         }
     }
@@ -526,11 +540,13 @@ public class MainViewModel : INotifyPropertyChanged
         get => _selectedCamera;
         set
         {
-            if (_selectedCamera != value)
+            if (_isUpdatingCameraList) return;
+            string effective = value ?? "Todas as Câmeras";
+            if (_selectedCamera != effective)
             {
-                _selectedCamera = value;
+                _selectedCamera = effective;
                 OnPropertyChanged();
-                _session.SetCameraFilter(value == "Todas as Câmeras" ? null : value);
+                _session.SetCameraFilter(effective == "Todas as Câmeras" ? null : effective);
                 RebuildViewModels();
             }
         }
@@ -542,18 +558,28 @@ public class MainViewModel : INotifyPropertyChanged
         get => _selectedFlashFilter;
         set
         {
-            if (_selectedFlashFilter != value)
+            if (_isUpdatingFlashFilter) return;
+            string effective = value ?? "Todos";
+            if (_selectedFlashFilter != effective)
             {
-                _selectedFlashFilter = value;
-                OnPropertyChanged();
-                bool? f = value switch
+                try
                 {
-                    "⚡ Flash Disparou" => true,
-                    "🚫 Sem Flash" => false,
-                    _ => null
-                };
-                _session.SetFlashFilter(f);
-                RebuildViewModels();
+                    _isUpdatingFlashFilter = true;
+                    _selectedFlashFilter = effective;
+                    OnPropertyChanged();
+                    bool? f = effective switch
+                    {
+                        "⚡ Flash Disparou" => true,
+                        "🚫 Sem Flash" => false,
+                        _ => null
+                    };
+                    _session.SetFlashFilter(f);
+                    RebuildViewModels();
+                }
+                finally
+                {
+                    _isUpdatingFlashFilter = false;
+                }
             }
         }
     }
@@ -1309,40 +1335,58 @@ public class MainViewModel : INotifyPropertyChanged
     private void RebuildRows()
     {
         Rows.Clear();
-        int itemsPerRow = _columnsPerRow;
+        int itemsPerRow = Math.Max(1, _columnsPerRow);
+        var newRows = new List<PhotoRowViewModel>((Photos.Count / itemsPerRow) + 1);
         for (int i = 0; i < Photos.Count; i += itemsPerRow)
         {
-            var chunk = Photos.Skip(i).Take(itemsPerRow).ToArray();
-            Rows.Add(new PhotoRowViewModel(chunk));
+            int count = Math.Min(itemsPerRow, Photos.Count - i);
+            var chunk = new PhotoViewModel[count];
+            for (int j = 0; j < count; j++)
+            {
+                chunk[j] = Photos[i + j];
+            }
+            newRows.Add(new PhotoRowViewModel(chunk));
+        }
+        foreach (var r in newRows)
+        {
+            Rows.Add(r);
         }
     }
 
     private void RebuildViewModels()
     {
-        var currentSelectedPath = SelectedPhoto?.FilePath;
-        Photos.Clear();
-
-        var viewModels = new List<PhotoViewModel>();
-        foreach (var model in _session.FilteredPhotos)
+        if (_isRebuildingViewModels) return;
+        try
         {
-            var vm = new PhotoViewModel(model, _session);
-            Photos.Add(vm);
-            viewModels.Add(vm);
+            _isRebuildingViewModels = true;
+            var currentSelectedPath = SelectedPhoto?.FilePath;
+            Photos.Clear();
+
+            var viewModels = new List<PhotoViewModel>();
+            foreach (var model in _session.FilteredPhotos)
+            {
+                var vm = new PhotoViewModel(model, _session);
+                Photos.Add(vm);
+                viewModels.Add(vm);
+            }
+
+            RebuildRows();
+
+            if (currentSelectedPath != null)
+            {
+                SelectedPhoto = Photos.FirstOrDefault(p => p.FilePath == currentSelectedPath) ?? Photos.FirstOrDefault();
+            }
+            else
+            {
+                SelectedPhoto = Photos.FirstOrDefault();
+            }
+
+            _loaderQueue.PrioritizeAndEnqueue(Photos);
         }
-
-        RebuildRows();
-
-        if (currentSelectedPath != null)
+        finally
         {
-            SelectedPhoto = Photos.FirstOrDefault(p => p.FilePath == currentSelectedPath) ?? Photos.FirstOrDefault();
+            _isRebuildingViewModels = false;
         }
-        else
-        {
-            SelectedPhoto = Photos.FirstOrDefault();
-        }
-
-        // Prioriza imediatamente os visíveis e enfileira o restante sempre que a visualização for reconstruída
-        _loaderQueue.PrioritizeAndEnqueue(Photos);
     }
 
     private async Task LoadLoupeImageAsync(PhotoViewModel photo)
@@ -1413,35 +1457,61 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void RefreshStats()
     {
-        OnPropertyChanged(nameof(CurrentDirectory));
-        OnPropertyChanged(nameof(CurrentDirectoryName));
-        OnPropertyChanged(nameof(CurrentDirectoryPath));
-        OnPropertyChanged(nameof(TotalCount));
-        OnPropertyChanged(nameof(PickedCount));
-        OnPropertyChanged(nameof(DoubtCount));
-        OnPropertyChanged(nameof(RejectedCount));
-        OnPropertyChanged(nameof(UnflaggedCount));
-        OnPropertyChanged(nameof(UnsavedCount));
-        OnPropertyChanged(nameof(GoodCount));
-        OnPropertyChanged(nameof(BlurryCount));
-        OnPropertyChanged(nameof(UnderexposedCount));
-        OnPropertyChanged(nameof(OverexposedCount));
-        OnPropertyChanged(nameof(BurstCount));
-        OnPropertyChanged(nameof(Star5Count));
-        OnPropertyChanged(nameof(Star4Count));
-        OnPropertyChanged(nameof(Star3Count));
-        OnPropertyChanged(nameof(Star2Count));
-        OnPropertyChanged(nameof(Star1Count));
-
-        // Atualiza câmeras disponíveis no ComboBox
-        var cameras = _session.AvailableCameras;
-        if (cameras.Count > 0)
+        if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
         {
-            var current = SelectedCamera;
-            CameraList.Clear();
-            CameraList.Add("Todas as Câmeras");
-            foreach (var cam in cameras) CameraList.Add(cam);
-            if (CameraList.Contains(current)) SelectedCamera = current;
+            Application.Current.Dispatcher.InvokeAsync(RefreshStats);
+            return;
+        }
+
+        if (_isRefreshingStats) return;
+        _isRefreshingStats = true;
+        try
+        {
+            OnPropertyChanged(nameof(CurrentDirectory));
+            OnPropertyChanged(nameof(CurrentDirectoryName));
+            OnPropertyChanged(nameof(CurrentDirectoryPath));
+            OnPropertyChanged(nameof(TotalCount));
+            OnPropertyChanged(nameof(PickedCount));
+            OnPropertyChanged(nameof(DoubtCount));
+            OnPropertyChanged(nameof(RejectedCount));
+            OnPropertyChanged(nameof(UnflaggedCount));
+            OnPropertyChanged(nameof(UnsavedCount));
+            OnPropertyChanged(nameof(GoodCount));
+            OnPropertyChanged(nameof(BlurryCount));
+            OnPropertyChanged(nameof(UnderexposedCount));
+            OnPropertyChanged(nameof(OverexposedCount));
+            OnPropertyChanged(nameof(BurstCount));
+            OnPropertyChanged(nameof(Star5Count));
+            OnPropertyChanged(nameof(Star4Count));
+            OnPropertyChanged(nameof(Star3Count));
+            OnPropertyChanged(nameof(Star2Count));
+            OnPropertyChanged(nameof(Star1Count));
+
+            // Atualiza câmeras disponíveis no ComboBox com proteção absoluta contra loop
+            var cameras = _session.AvailableCameras;
+            var existing = CameraList.Skip(1).ToList();
+            if (!existing.SequenceEqual(cameras))
+            {
+                _isUpdatingCameraList = true;
+                try
+                {
+                    var current = _selectedCamera;
+                    CameraList.Clear();
+                    CameraList.Add("Todas as Câmeras");
+                    foreach (var cam in cameras) CameraList.Add(cam);
+
+                    _selectedCamera = CameraList.Contains(current) ? current : "Todas as Câmeras";
+                    OnPropertyChanged(nameof(SelectedCamera));
+                }
+                finally
+                {
+                    _isUpdatingCameraList = false;
+                }
+            }
+        }
+        finally
+        {
+            _isRefreshingStats = false;
         }
     }
 
