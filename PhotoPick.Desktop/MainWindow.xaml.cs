@@ -75,6 +75,19 @@ public partial class MainWindow : Window
 
     #region Toolbar Ações
 
+    private void BtnToggleTheme_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleTheme();
+    }
+
+    private void FormatItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: FileFormatItemViewModel item })
+        {
+            ViewModel.FilterByFormat(item.Extension);
+        }
+    }
+
     private void BtnViewMode_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleViewMode();
     private void BtnAutoAdvance_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleAutoAdvance();
     private async void BtnLightroom_Click(object sender, RoutedEventArgs e) => await ViewModel.SyncAndOpenLightroomAsync();

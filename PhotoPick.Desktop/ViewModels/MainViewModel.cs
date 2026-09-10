@@ -47,6 +47,108 @@ public class MainViewModel : INotifyPropertyChanged
 
     public string WindowTitle => "Mavi Select";
 
+    private bool _isDarkTheme = true;
+    public bool IsDarkTheme
+    {
+        get => _isDarkTheme;
+        set
+        {
+            if (_isDarkTheme != value)
+            {
+                _isDarkTheme = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ThemeToggleText));
+                OnPropertyChanged(nameof(ThemeToggleIcon));
+                ThemeService.SetTheme(value ? AppTheme.Dark : AppTheme.Light);
+            }
+        }
+    }
+
+    public string ThemeToggleText => IsDarkTheme ? "Modo Escuro" : "Modo Claro";
+    public string ThemeToggleIcon => IsDarkTheme ? "🌙" : "☀️";
+
+    public void ToggleTheme()
+    {
+        IsDarkTheme = !IsDarkTheme;
+    }
+
+    public ObservableCollection<FileFormatItemViewModel> Formats { get; } = [];
+    private string? _selectedFormat;
+    public string? SelectedFormat
+    {
+        get => _selectedFormat;
+        set
+        {
+            if (_selectedFormat != value)
+            {
+                _selectedFormat = value;
+                OnPropertyChanged();
+                _session.SetFormatFilter(value);
+                RebuildViewModels();
+            RebuildFormatList();
+                UpdateFormatSelection();
+            }
+        }
+    }
+
+    public void FilterByFormat(string? ext)
+    {
+        SelectedFormat = (ext == "ALL" || string.IsNullOrEmpty(ext)) ? null : ext;
+    }
+
+    public void RebuildFormatList()
+    {
+        Formats.Clear();
+        Formats.Add(new FileFormatItemViewModel("ALL", "Todos os Formatos", "🖼️", _session.TotalCount, string.IsNullOrEmpty(_selectedFormat)));
+
+        foreach (var kvp in _session.FormatCounts.OrderByDescending(k => k.Value))
+        {
+            string ext = kvp.Key;
+            string displayName = ext.ToUpperInvariant() switch
+            {
+                ".CR3" or "CR3" => "Canon RAW (.CR3)",
+                ".CR2" or "CR2" => "Canon RAW (.CR2)",
+                ".ARW" or "ARW" => "Sony RAW (.ARW)",
+                ".NEF" or "NEF" => "Nikon RAW (.NEF)",
+                ".RAF" or "RAF" => "Fuji RAW (.RAF)",
+                ".DNG" or "DNG" => "Adobe DNG (.DNG)",
+                ".JPG" or "JPG" or ".JPEG" or "JPEG" => "Imagens JPEG (.JPG)",
+                _ => $"{ext.TrimStart('.').ToUpper()} ({ext})"
+            };
+
+            string icon = ext.ToUpperInvariant() switch
+            {
+                ".CR3" or "CR3" or ".CR2" or "CR2" => "🔴",
+                ".ARW" or "ARW" => "🟠",
+                ".NEF" or "NEF" => "🟡",
+                ".RAF" or "RAF" => "🟢",
+                ".DNG" or "DNG" => "🔵",
+                _ => "🟣"
+            };
+
+            bool isSel = string.Equals(_selectedFormat, ext, StringComparison.OrdinalIgnoreCase) ||
+                         string.Equals(_selectedFormat, "." + ext, StringComparison.OrdinalIgnoreCase);
+
+            string cleanExt = ext.StartsWith(".") ? ext : "." + ext;
+            Formats.Add(new FileFormatItemViewModel(cleanExt, displayName, icon, kvp.Value, isSel));
+        }
+    }
+
+    private void UpdateFormatSelection()
+    {
+        foreach (var item in Formats)
+        {
+            if (string.IsNullOrEmpty(_selectedFormat) || _selectedFormat == "ALL")
+            {
+                item.IsSelected = (item.Extension == "ALL");
+            }
+            else
+            {
+                item.IsSelected = string.Equals(item.Extension, _selectedFormat, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+    }
+
     public bool IsWelcomeScreenVisible
     {
         get => _isDashboardVisible;

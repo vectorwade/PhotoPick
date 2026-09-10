@@ -43,6 +43,11 @@ public class CullingSession
     public PhotoFilterMode CurrentFilter { get; private set; } = PhotoFilterMode.All;
     public string? CurrentCameraFilter { get; private set; }
     public bool? CurrentFlashFilter { get; private set; }
+    public string? CurrentFormatFilter { get; private set; }
+
+    public Dictionary<string, int> FormatCounts => _allPhotos
+        .GroupBy(p => p.Extension.ToUpperInvariant())
+        .ToDictionary(g => g.Key, g => g.Count());
     public string? CurrentDirectory { get; private set; }
 
     public int TotalCount => _allPhotos.Count;
@@ -178,6 +183,12 @@ public class CullingSession
         ApplyFilter(CurrentFilter);
     }
 
+    public void SetFormatFilter(string? format)
+    {
+        CurrentFormatFilter = (string.Equals(format, "ALL", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(format)) ? null : format;
+        ApplyFilter(CurrentFilter);
+    }
+
     public List<PhotoItem> PickBurstBest(PhotoItem item)
     {
         var affected = BurstStackingService.PickBestAndRejectRest(item, _allPhotos);
@@ -217,6 +228,11 @@ public class CullingSession
         if (CurrentFlashFilter.HasValue)
         {
             query = query.Where(p => p.FlashFired == CurrentFlashFilter.Value);
+        }
+
+        if (!string.IsNullOrEmpty(CurrentFormatFilter))
+        {
+            query = query.Where(p => string.Equals(p.Extension, CurrentFormatFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         foreach (var photo in query)
