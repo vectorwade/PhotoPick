@@ -23,6 +23,14 @@ public class RawPreviewResult
     public double? ExposureTime { get; init; }
     public double? FocalLength { get; init; }
     public double? ExposureBias { get; init; }
+    public int? FocalLength35mm { get; init; }
+    public double? MaxAperture { get; init; }
+    public string? MeteringMode { get; init; }
+    public string? ExposureProgram { get; init; }
+    public string? ExposureMode { get; init; }
+    public string? WhiteBalance { get; init; }
+    public string? Software { get; init; }
+    public string? SerialNumber { get; init; }
 
     public static RawPreviewResult Fail(string error, double elapsedMs = 0) => new()
     {
@@ -46,7 +54,15 @@ public class RawPreviewResult
         double? fNumber = null,
         double? exposureTime = null,
         double? focalLength = null,
-        double? exposureBias = null) => new()
+        double? exposureBias = null,
+        int? focalLength35mm = null,
+        double? maxAperture = null,
+        string? meteringMode = null,
+        string? exposureProgram = null,
+        string? exposureMode = null,
+        string? whiteBalance = null,
+        string? software = null,
+        string? serialNumber = null) => new()
     {
         Success = true,
         JpegBytes = jpegBytes,
@@ -63,6 +79,14 @@ public class RawPreviewResult
         FNumber = fNumber,
         ExposureTime = exposureTime,
         FocalLength = focalLength,
-        ExposureBias = exposureBias
+        ExposureBias = exposureBias,
+        FocalLength35mm = focalLength35mm,
+        MaxAperture = maxAperture,
+        MeteringMode = meteringMode,
+        ExposureProgram = exposureProgram,
+        ExposureMode = exposureMode,
+        WhiteBalance = whiteBalance,
+        Software = software,
+        SerialNumber = serialNumber
     };
 }

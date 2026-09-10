@@ -832,8 +832,9 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- SEÇÃO 2: DADOS DA FOTO ATIVA -->
-                        <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,14">
+                        <!-- SEÇÃO 2: DADOS DA FOTO ATIVA (CLICÁVEL PARA INFORMAÇÕES COMPLETAS) -->
+                        <Border Background="{DynamicResource BgWorkspace}" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,14"
+                                Cursor="Hand" MouseLeftButtonDown="InspectorCard_MouseLeftButtonDown" ToolTip="Clique para abrir todos os metadados e informações detalhadas">
                             <StackPanel>
                                 <TextBlock Text="FOTO SELECIONADA" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,10"/>
 
@@ -899,6 +900,13 @@
                                             <TextBlock Text="Data / Hora:" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
                                             <TextBlock Text="{Binding SelectedPhotoDate, Mode=OneWay}" HorizontalAlignment="Right" FontSize="10.5" Foreground="{DynamicResource TextMuted}"/>
                                         </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="#1E232E" BorderBrush="#2D3748" BorderThickness="1" CornerRadius="4" Padding="8,5" Margin="0,4,0,0" HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="🔍 " FontSize="10"/>
+                                        <TextBlock Text="Clique para ver detalhes completos" FontSize="10" Foreground="#38BDF8" FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1308,6 +1316,219 @@
                             <TextBlock Text="Entendi, fechar ajuda [Esc]" FontSize="11.5" Foreground="#FFFFFF"/>
                         </Button>
                     </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================== -->
+        <!-- MODAL DE METADADOS COMPLETOS (ANTIGRAVITY DARK STYLE)          -->
+        <!-- ============================================================== -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="9998" Background="#CC000000"
+              MouseLeftButtonDown="MetadataModalBackdrop_MouseLeftButtonDown"
+              Visibility="{Binding IsMetadataModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border Background="#121214" BorderBrush="#2D3748" BorderThickness="1.5"
+                    CornerRadius="14" Padding="28,24" Width="720" MaxHeight="680"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MouseLeftButtonDown="MetadataModalCard_MouseLeftButtonDown">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="12" Opacity="0.85"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Botão Fechar no Topo Direito -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Top"
+                            Style="{StaticResource CaptionBtn}" Click="BtnCloseMetadataModal_Click"
+                            ToolTip="Fechar [Esc]">
+                        <TextBlock Text="✕" FontSize="14" Foreground="{DynamicResource TextMuted}"/>
+                    </Button>
+
+                    <!-- Cabeçalho -->
+                    <Grid Grid.Row="0" Margin="0,0,30,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="46" Height="46" CornerRadius="10" Background="#1E2433" BorderBrush="#3B82F6" BorderThickness="1" Margin="0,0,14,0">
+                            <TextBlock Text="📸" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding SelectedPhoto.FileName, Mode=OneWay}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" MaxWidth="480"/>
+                                <Border Background="#2563EB" CornerRadius="3" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedPhoto.Extension, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="{Binding SelectedPhoto.FormattedDimensions, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Conteúdo com Scroll -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,16">
+                        <StackPanel>
+                            <!-- SEÇÃO 1: CÂMERA & EQUIPAMENTO -->
+                            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📷" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="CÂMERA &amp; EQUIPAMENTO" FontSize="11" FontWeight="Bold" Foreground="#60A5FA"/>
+                                    </StackPanel>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Fabricante:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.Model.CameraMake, Mode=OneWay, FallbackValue='-'}" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Modelo da Câmera:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedCamera, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Número de Série:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedSerialNumber, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Software / Firmware:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedSoftware, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SEÇÃO 2: LENTE & ÓPTICA -->
+                            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="🔭" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="LENTE &amp; ÓPTICA" FontSize="11" FontWeight="Bold" Foreground="#34D399"/>
+                                    </StackPanel>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Modelo da Lente:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedLens, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Distância Focal:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedFocalLength, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Equivalente a 35mm:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.Formatted35mmEquiv, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Abertura Máxima da Lente:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedMaxAperture, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SEÇÃO 3: EXPOSIÇÃO & DISPARO -->
+                            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="⚡" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="EXPOSIÇÃO &amp; DISPARO" FontSize="11" FontWeight="Bold" Foreground="#FBBF24"/>
+                                    </StackPanel>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Tempo de Exposição (Obturador):" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedShutter, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Abertura do Diafragma (F-Stop):" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedAperture, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Sensibilidade ISO:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedIso, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Compensação de Exposição:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedExposureBias, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Modo de Medição:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedMeteringMode, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Programa de Exposição:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedExposureProgram, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Modo de Exposição:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedExposureMode, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Balanço de Branco (WB):" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedWhiteBalance, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Flash / Disparo:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedFlash, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SEÇÃO 4: ARQUIVO & LOCALIZAÇÃO -->
+                            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="14,10">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📁" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="ARQUIVO &amp; LOCALIZAÇÃO" FontSize="11" FontWeight="Bold" Foreground="#A78BFA"/>
+                                    </StackPanel>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Data / Hora do Disparo:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedDate, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Tamanho do Arquivo:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.FormattedSize, Mode=OneWay}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2.5">
+                                        <TextBlock Text="Orientação EXIF:" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
+                                        <TextBlock Text="{Binding SelectedPhoto.Orientation, Mode=OneWay, StringFormat='Código {0}'}" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource TextNormal}"/>
+                                    </Grid>
+                                    <DockPanel Margin="0,4,0,0">
+                                        <TextBlock Text="Caminho Completo:" FontSize="10.5" Foreground="{DynamicResource TextMuted}" DockPanel.Dock="Top" Margin="0,0,0,2"/>
+                                        <TextBox Text="{Binding SelectedPhoto.FilePath, Mode=OneWay}" IsReadOnly="True"
+                                                 Background="#121214" Foreground="#9CA3AF" BorderBrush="#27272A" BorderThickness="1"
+                                                 Padding="8,6" FontSize="10.5" FontFamily="Consolas, monospace"/>
+                                    </DockPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Botões de Ação no Rodapé -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Click="BtnCopyAllMetadata_Click"
+                                Margin="0,0,8,0" Padding="14,10" Background="#27272A" BorderBrush="#3F3F46" Style="{StaticResource IdeToolBtn}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="📋 " FontSize="12"/>
+                                <TextBlock Text="Copiar Todas as Informações" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Grid.Column="1" Click="BtnCloseMetadataModal_Click"
+                                Padding="20,10" Background="#3B82F6" BorderBrush="#2563EB" BorderThickness="1" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#2563EB"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock Text="Fechar [Esc]" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

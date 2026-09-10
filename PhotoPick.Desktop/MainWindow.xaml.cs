@@ -175,6 +175,31 @@ public partial class MainWindow : Window
     private void HelpModalBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => ViewModel.CloseHelpModal();
     private void HelpModalCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
+    private void InspectorCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        ViewModel.OpenMetadataModal();
+    }
+
+    private void MetadataModalBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        ViewModel.CloseMetadataModal();
+    }
+
+    private void MetadataModalCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private void BtnCloseMetadataModal_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CloseMetadataModal();
+    }
+
+    private void BtnCopyAllMetadata_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CopyAllMetadataToClipboard();
+    }
+
     #endregion
 
     #region Navegação Esquerda & Abertura de Pasta
@@ -568,6 +593,16 @@ public partial class MainWindow : Window
             if (e.Key is Key.Escape)
             {
                 ViewModel.CloseLicenseDialog();
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if (ViewModel.IsMetadataModalOpen)
+        {
+            if (e.Key is Key.Escape)
+            {
+                ViewModel.CloseMetadataModal();
                 e.Handled = true;
             }
             return;

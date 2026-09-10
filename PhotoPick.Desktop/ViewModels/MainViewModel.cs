@@ -170,6 +170,82 @@ public class MainViewModel : INotifyPropertyChanged
 
     public string CurrentDirectoryPath => _session.CurrentDirectory ?? "Selecione uma pasta para começar";
 
+    private bool _isMetadataModalOpen;
+    public bool IsMetadataModalOpen
+    {
+        get => _isMetadataModalOpen;
+        set
+        {
+            if (_isMetadataModalOpen != value)
+            {
+                _isMetadataModalOpen = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public void OpenMetadataModal()
+    {
+        if (SelectedPhoto == null) return;
+        IsMetadataModalOpen = true;
+        if (string.IsNullOrEmpty(SelectedPhoto.CameraModel) || !SelectedPhoto.Model.Iso.HasValue)
+        {
+            _ = EnsureSelectedPhotoMetadataAsync(SelectedPhoto);
+        }
+    }
+
+    public void CloseMetadataModal()
+    {
+        IsMetadataModalOpen = false;
+    }
+
+    public void CopyAllMetadataToClipboard()
+    {
+        if (SelectedPhoto == null) return;
+        try
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== METADADOS DA IMAGEM — MAVI SELECT ===");
+            sb.AppendLine($"Arquivo: {SelectedPhoto.FileName}");
+            sb.AppendLine($"Caminho: {SelectedPhoto.FilePath}");
+            sb.AppendLine($"Formato: {SelectedPhoto.Extension.TrimStart('.').ToUpperInvariant()}");
+            sb.AppendLine($"Tamanho: {SelectedPhoto.FormattedSize}");
+            sb.AppendLine($"Dimensões: {SelectedPhoto.FormattedDimensions}");
+            sb.AppendLine($"Data/Hora: {SelectedPhoto.FormattedDate}");
+            sb.AppendLine();
+            sb.AppendLine("--- EQUIPAMENTO ---");
+            sb.AppendLine($"Fabricante: {SelectedPhoto.Model.CameraMake ?? "-"}");
+            sb.AppendLine($"Câmera: {SelectedPhoto.FormattedCamera}");
+            sb.AppendLine($"Número de Série: {SelectedPhoto.FormattedSerialNumber}");
+            sb.AppendLine($"Software / Firmware: {SelectedPhoto.FormattedSoftware}");
+            sb.AppendLine();
+            sb.AppendLine("--- LENTE & ÓPTICA ---");
+            sb.AppendLine($"Lente: {SelectedPhoto.FormattedLens}");
+            sb.AppendLine($"Distância Focal: {SelectedPhoto.FormattedFocalLength}");
+            sb.AppendLine($"Equiv. 35mm: {SelectedPhoto.Formatted35mmEquiv}");
+            sb.AppendLine($"Abertura Máxima: {SelectedPhoto.FormattedMaxAperture}");
+            sb.AppendLine();
+            sb.AppendLine("--- EXPOSIÇÃO & DISPARO ---");
+            sb.AppendLine($"Velocidade: {SelectedPhoto.FormattedShutter}");
+            sb.AppendLine($"Abertura: {SelectedPhoto.FormattedAperture}");
+            sb.AppendLine($"ISO: {SelectedPhoto.FormattedIso}");
+            sb.AppendLine($"Compensação EV: {SelectedPhoto.FormattedExposureBias}");
+            sb.AppendLine($"Modo de Medição: {SelectedPhoto.FormattedMeteringMode}");
+            sb.AppendLine($"Programa de Exposição: {SelectedPhoto.FormattedExposureProgram}");
+            sb.AppendLine($"Modo de Exposição: {SelectedPhoto.FormattedExposureMode}");
+            sb.AppendLine($"Balanço de Branco: {SelectedPhoto.FormattedWhiteBalance}");
+            sb.AppendLine($"Flash: {SelectedPhoto.FormattedFlash}");
+            sb.AppendLine();
+            sb.AppendLine("--- QUALIDADE INTELIGENTE ---");
+            sb.AppendLine($"Diagnóstico: {SelectedPhoto.QualityStatusText}");
+            sb.AppendLine($"Score de Foco: {SelectedPhoto.SharpnessPercent:0.#}%");
+            sb.AppendLine($"Balanço de Exposição: {SelectedPhoto.BrightnessPercent:0.#}%");
+
+            Clipboard.SetText(sb.ToString());
+        }
+        catch { }
+    }
+
     private bool _isGamepadConnected;
     public bool IsGamepadConnected
     {
@@ -571,6 +647,13 @@ public class MainViewModel : INotifyPropertyChanged
                     {
                         _ = _loaderQueue.LoadThumbnailDirectAsync(_selectedPhoto);
                     }
+
+                    // Se a foto selecionada estiver sem metadados (ex: cache antigo), extrai imediatamente!
+                    if (string.IsNullOrEmpty(_selectedPhoto.CameraModel) || !_selectedPhoto.Model.Iso.HasValue)
+                    {
+                        _ = EnsureSelectedPhotoMetadataAsync(_selectedPhoto);
+                    }
+
                     if (IsSingleViewMode)
                     {
                         _ = LoadLoupeImageAsync(_selectedPhoto);
@@ -578,6 +661,31 @@ public class MainViewModel : INotifyPropertyChanged
                 }
             }
         }
+    }
+
+    private async Task EnsureSelectedPhotoMetadataAsync(PhotoViewModel photo)
+    {
+        try
+        {
+            var res = await _extractor.ExtractPreviewAsync(photo.FilePath);
+            if (res.Success)
+            {
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    photo.ApplyMetadata(res);
+                    OnPropertyChanged(nameof(SelectedPhotoCamera));
+                    OnPropertyChanged(nameof(SelectedPhotoLens));
+                    OnPropertyChanged(nameof(SelectedPhotoExposure));
+                    OnPropertyChanged(nameof(SelectedPhotoFocalLength));
+                    OnPropertyChanged(nameof(SelectedPhotoFlash));
+                    OnPropertyChanged(nameof(SelectedPhotoDimensions));
+                    OnPropertyChanged(nameof(SelectedPhotoFileInfo));
+                    OnPropertyChanged(nameof(SelectedPhotoDate));
+                });
+                await _session.SavePhotoMetadataAsync(photo.Model);
+            }
+        }
+        catch { }
     }
 
     private void SelectedPhoto_PropertyChanged(object? sender, PropertyChangedEventArgs e)
