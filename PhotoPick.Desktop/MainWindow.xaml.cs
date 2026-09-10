@@ -2,10 +2,12 @@ using PhotoPick.Core.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using Microsoft.Win32;
 using PhotoPick.Core.Models;
 using PhotoPick.Desktop.Services;
@@ -15,10 +17,14 @@ namespace PhotoPick.Desktop;
 
 public partial class MainWindow : Window
 {
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
     public MainViewModel ViewModel => (MainViewModel)DataContext;
     private readonly GamepadService _gamepadService;
     private bool _isPanning;
     private Point _panStartPoint;
+    private Point _panClickOrigin;
     private Point _panStartTranslate;
     private bool _isLoupeZoomed;
 
@@ -30,12 +36,59 @@ public partial class MainWindow : Window
         _gamepadService = new GamepadService();
         _gamepadService.ActionTriggered += action => ViewModel.HandleGamepadAction(action);
         _gamepadService.ConnectionChanged += connected => ViewModel.IsGamepadConnected = connected;
+
+        ViewModel.PhotoSelected += OnPhotoSelected;
+    }
+
+    private void OnPhotoSelected(PhotoViewModel photo)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (ViewModel.Rows.Count > 0 && GridScrollViewer != null)
+            {
+                var row = ViewModel.Rows.FirstOrDefault(r => r.Columns.Contains(photo));
+                if (row != null)
+                {
+                    GridScrollViewer.ScrollIntoView(row);
+                }
+            }
+        });
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _gamepadService.Start();
         if (DataContext is MainViewModel vm) vm.UpdateColumnsForWidth(GridScrollViewer?.ActualWidth ?? ActualWidth - 560);
+
+        try
+        {
+            var helper = new WindowInteropHelper(this);
+            int preference = 2; // DWMWCP_ROUND (cantos arredondados nativos no Windows 11)
+            DwmSetWindowAttribute(helper.Handle, 33 /* DWMWA_WINDOW_CORNER_PREFERENCE */, ref preference, sizeof(int));
+        }
+        catch { }
+
+        UpdateWindowCorners();
+    }
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        UpdateWindowCorners();
+    }
+
+    private void UpdateWindowCorners()
+    {
+        if (MainWindowRootBorder == null) return;
+        if (WindowState == WindowState.Maximized)
+        {
+            MainWindowRootBorder.CornerRadius = new CornerRadius(0);
+            MainWindowRootBorder.BorderThickness = new Thickness(0);
+        }
+        else
+        {
+            MainWindowRootBorder.CornerRadius = new CornerRadius(8);
+            MainWindowRootBorder.BorderThickness = new Thickness(1);
+        }
     }
 
     private void Window_Closed(object sender, EventArgs e)
@@ -198,6 +251,8 @@ public partial class MainWindow : Window
                 ViewModel.ToggleViewMode();
             }
         }
+        this.Focus();
+        e.Handled = true;
     }
 
     private void CardBtnPick_Click(object sender, RoutedEventArgs e)
@@ -256,6 +311,11 @@ public partial class MainWindow : Window
                 LoupeScaleTransform.ScaleX = 2.5;
                 LoupeScaleTransform.ScaleY = 2.5;
             }
+            if (LoupeTranslateTransform != null)
+            {
+                LoupeTranslateTransform.X = 0;
+                LoupeTranslateTransform.Y = 0;
+            }
             if (LoupeZoomBtnText != null) LoupeZoomBtnText.Text = "🔍 Ajustar";
         }
         else
@@ -286,6 +346,29 @@ public partial class MainWindow : Window
     {
         if (LoupeScaleTransform == null || LoupeTranslateTransform == null) return;
 
+        Point mouseOnImage = e.GetPosition(LoupeMainImage);
+        bool isOverImage = (mouseOnImage.X >= 0 && mouseOnImage.X <= LoupeMainImage.ActualWidth &&
+                            mouseOnImage.Y >= 0 && mouseOnImage.Y <= LoupeMainImage.ActualHeight);
+
+        // Se NÃO estiver com zoom OU se o cursor estiver fora da foto (nas barras pretas):
+        // Rolar o scroll caminha entre as fotos!
+        if (!_isLoupeZoomed || !isOverImage)
+        {
+            if (e.Delta < 0)
+            {
+                ResetLoupeZoom();
+                ViewModel.NextPhoto();
+            }
+            else if (e.Delta > 0)
+            {
+                ResetLoupeZoom();
+                ViewModel.PreviousPhoto();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // Se estiver com zoom e com o cursor em cima da foto:
         double factor = e.Delta > 0 ? 1.25 : 0.8;
         double newScale = Math.Clamp(LoupeScaleTransform.ScaleX * factor, 0.8, 6.0);
 
@@ -305,39 +388,98 @@ public partial class MainWindow : Window
 
     private void LoupeContainer_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 2)
+        // Se clicar fora da foto nas barras pretas, tira o zoom imediatamente
+        if (_isLoupeZoomed)
         {
-            ToggleLoupeZoom();
+            ResetLoupeZoom();
             e.Handled = true;
             return;
         }
 
-        if (_isLoupeZoomed && sender is UIElement elem)
+        if (e.ClickCount == 2)
         {
-            _isPanning = true;
-            _panStartPoint = e.GetPosition(this);
-            _panStartTranslate = new Point(LoupeTranslateTransform.X, LoupeTranslateTransform.Y);
-            elem.CaptureMouse();
+            ViewModel.ToggleViewMode();
             e.Handled = true;
         }
     }
 
     private void LoupeContainer_MouseMove(object sender, MouseEventArgs e)
     {
+    }
+
+    private void LoupeContainer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+    }
+
+    private void LoupeImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ResetLoupeZoom();
+            ViewModel.ToggleViewMode();
+            e.Handled = true;
+            return;
+        }
+
+        if (!_isLoupeZoomed)
+        {
+            // Zoom inteligente no ponto clicado pelo mouse
+            if (LoupeContainer != null && LoupeScaleTransform != null && LoupeTranslateTransform != null)
+            {
+                Point clickPos = e.GetPosition(LoupeContainer);
+                double containerCenterX = LoupeContainer.ActualWidth / 2.0;
+                double containerCenterY = LoupeContainer.ActualHeight / 2.0;
+                double dx = clickPos.X - containerCenterX;
+                double dy = clickPos.Y - containerCenterY;
+
+                double targetScale = 2.5;
+                _isLoupeZoomed = true;
+                LoupeScaleTransform.ScaleX = targetScale;
+                LoupeScaleTransform.ScaleY = targetScale;
+                LoupeTranslateTransform.X = -dx * (targetScale - 1.0);
+                LoupeTranslateTransform.Y = -dy * (targetScale - 1.0);
+                if (LoupeZoomBtnText != null) LoupeZoomBtnText.Text = "🔍 Ajustar";
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // Se já está com zoom: inicia pan
+        _isPanning = true;
+        _panStartPoint = e.GetPosition(this);
+        _panClickOrigin = _panStartPoint;
+        _panStartTranslate = new Point(LoupeTranslateTransform?.X ?? 0, LoupeTranslateTransform?.Y ?? 0);
+        LoupeMainImage.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void LoupeImage_MouseMove(object sender, MouseEventArgs e)
+    {
         if (_isPanning && LoupeTranslateTransform != null)
         {
             Point current = e.GetPosition(this);
             LoupeTranslateTransform.X = _panStartTranslate.X + (current.X - _panStartPoint.X);
             LoupeTranslateTransform.Y = _panStartTranslate.Y + (current.Y - _panStartPoint.Y);
+            e.Handled = true;
         }
     }
 
-    private void LoupeContainer_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void LoupeImage_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_isPanning)
         {
             _isPanning = false;
-            (sender as UIElement)?.ReleaseMouseCapture();
+            LoupeMainImage.ReleaseMouseCapture();
+
+            Point upPoint = e.GetPosition(this);
+            double dist = Math.Sqrt(Math.Pow(upPoint.X - _panClickOrigin.X, 2) + Math.Pow(upPoint.Y - _panClickOrigin.Y, 2));
+
+            // Se o usuário apenas clicou (sem arrastar), tira o zoom para ajustar à tela
+            if (dist < 5.0)
+            {
+                ResetLoupeZoom();
+            }
+            e.Handled = true;
         }
     }
 
@@ -369,7 +511,7 @@ public partial class MainWindow : Window
 
     #region Atalhos de Teclado
 
-    private async void Window_KeyDown(object sender, KeyEventArgs e)
+    private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (ViewModel.IsHelpModalOpen)
         {

@@ -18,8 +18,9 @@
         AllowDrop="True"
         Drop="Window_Drop"
         DragOver="Window_DragOver"
-        KeyDown="Window_KeyDown"
+        PreviewKeyDown="Window_PreviewKeyDown"
         SizeChanged="Window_SizeChanged"
+        StateChanged="Window_StateChanged"
         Loaded="Window_Loaded"
         Closed="Window_Closed">
 
@@ -30,7 +31,7 @@
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="38"
                       ResizeBorderThickness="6"
-                      CornerRadius="0"
+                      CornerRadius="8"
                       GlassFrameThickness="0"
                       UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
@@ -240,6 +241,7 @@
         </Style>
     </Window.Resources>
 
+    <Border x:Name="MainWindowRootBorder" CornerRadius="8" BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1" ClipToBounds="True" Background="{DynamicResource BgWorkspace}">
     <Grid Background="{DynamicResource BgWorkspace}">
         <Grid.RowDefinitions>
             <!-- 0: Header / TitleBar customizada (38px) -->
@@ -573,7 +575,7 @@
                                         <DataTemplate>
                                             <!-- CARD DA FOTO (ESTILO MINIMALISTA COM AURA) -->
                                             <Border Width="250" Height="265" Margin="7,7"
-                                                    Background="{DynamicResource BgCard}"
+                                                    Background="{Binding CardBackgroundBrush}"
                                                     CornerRadius="6"
                                                     BorderBrush="{Binding CardBorderBrush}"
                                                     BorderThickness="{Binding CardBorderThickness}"
@@ -643,6 +645,14 @@
                                                                     Visibility="{Binding IsRejected, Converter={StaticResource BoolToVis}}">
                                                                 <TextBlock Text="✖ REJEITADA" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
                                                             </Border>
+
+                                                            <!-- Badge de Foto Selecionada Ativa no Canto Inferior Direito -->
+                                                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="8,8"
+                                                                    Background="#2980B9" CornerRadius="4" Padding="6,2"
+                                                                    Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}"
+                                                                    ToolTip="Foto atualmente selecionada para inspeção">
+                                                                <TextBlock Text="● ATIVA" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                            </Border>
                                                         </Grid>
                                                     </Border>
 
@@ -701,7 +711,8 @@
                     </ListBox>
 
                 <!-- Modo Loupe (Visualização de Foto Única / Zoom Interativo 1:1 e Pan com Focus Peaking) -->
-                <Grid Visibility="{Binding IsSingleViewMode, Converter={StaticResource BoolToVis}}"
+                <Grid x:Name="LoupeContainer"
+                      Visibility="{Binding IsSingleViewMode, Converter={StaticResource BoolToVis}}"
                       Background="#0A0A0A"
                       ClipToBounds="True"
                       MouseWheel="LoupeContainer_MouseWheel"
@@ -710,7 +721,7 @@
                       MouseMove="LoupeContainer_MouseMove">
 
                     <!-- Canvas Interativo da Imagem (Suporta Zoom e Pan) -->
-                    <Grid x:Name="LoupeImageCanvas" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid x:Name="LoupeImageCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
                         <Grid.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform x:Name="LoupeScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
@@ -721,6 +732,10 @@
                         <Image x:Name="LoupeMainImage"
                                Source="{Binding LoupeImage}"
                                Stretch="Uniform"
+                               Cursor="Hand"
+                               MouseLeftButtonDown="LoupeImage_MouseLeftButtonDown"
+                               MouseLeftButtonUp="LoupeImage_MouseLeftButtonUp"
+                               MouseMove="LoupeImage_MouseMove"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
 
                         <!-- Camada de Focus Peaking (Verde Neon) -->
@@ -1103,4 +1118,5 @@
             </Border>
         </Grid>
     </Grid>
+    </Border>
 </Window>

@@ -119,7 +119,27 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     #endregion
 
-    #region Aura Visual (Verde para Pick, Vermelho para Reject)
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CardBorderBrush));
+                OnPropertyChanged(nameof(CardBorderThickness));
+                OnPropertyChanged(nameof(AuraEffect));
+                OnPropertyChanged(nameof(CardBackgroundBrush));
+            }
+        }
+    }
+
+    public Brush CardBackgroundBrush => IsSelected
+        ? new SolidColorBrush(Color.FromRgb(28, 28, 28))
+        : new SolidColorBrush(Color.FromRgb(20, 20, 20));
 
     public Brush CardBorderBrush
     {
@@ -128,12 +148,13 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (IsPicked) return new SolidColorBrush(Color.FromRgb(46, 204, 113));     // Verde esmeralda
             if (IsDoubt) return new SolidColorBrush(Color.FromRgb(243, 156, 18));     // Âmbar / Dourado
             if (IsRejected) return new SolidColorBrush(Color.FromRgb(231, 76, 60));   // Vermelho coral
+            if (IsSelected) return new SolidColorBrush(Color.FromRgb(52, 152, 219));   // Azul seleção ativa (#3498DB)
             if (Rating > 0) return new SolidColorBrush(Color.FromRgb(243, 156, 18));   // Dourado
             return new SolidColorBrush(Color.FromRgb(38, 38, 38));                    // Neutro escuro
         }
     }
 
-    public double CardBorderThickness => (IsPicked || IsRejected || IsDoubt) ? 2.5 : 1.5;
+    public double CardBorderThickness => (IsSelected || IsPicked || IsRejected || IsDoubt) ? 2.5 : 1.5;
 
     public Effect? AuraEffect
     {
@@ -169,6 +190,16 @@ public class PhotoViewModel : INotifyPropertyChanged
                     Opacity = 0.85
                 };
             }
+            if (IsSelected)
+            {
+                return new DropShadowEffect
+                {
+                    Color = Color.FromRgb(52, 152, 219),
+                    BlurRadius = 18,
+                    ShadowDepth = 0,
+                    Opacity = 0.80
+                };
+            }
             return null;
         }
     }
@@ -194,8 +225,6 @@ public class PhotoViewModel : INotifyPropertyChanged
         "purple" => new SolidColorBrush(Color.FromRgb(155, 89, 182)),
         _ => Brushes.Transparent
     };
-
-    #endregion
 
     #region Thumbnail
 
@@ -396,6 +425,8 @@ public class PhotoViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsPicked));
         OnPropertyChanged(nameof(IsDoubt));
         OnPropertyChanged(nameof(IsRejected));
+        OnPropertyChanged(nameof(IsSelected));
+        OnPropertyChanged(nameof(CardBackgroundBrush));
         OnPropertyChanged(nameof(CardBorderBrush));
         OnPropertyChanged(nameof(CardBorderThickness));
         OnPropertyChanged(nameof(AuraEffect));

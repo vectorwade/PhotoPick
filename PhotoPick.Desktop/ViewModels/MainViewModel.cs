@@ -352,6 +352,8 @@ public class MainViewModel : INotifyPropertyChanged
     public string ViewModeLabel => IsSingleViewMode ? "⊞ Modo Grade" : "🔍 Foto Única";
     public string ViewModeToolTip => IsSingleViewMode ? "Voltar para a Grade de Fotos [Espaço]" : "Ver Foto Única ampliada [Espaço]";
 
+    public event Action<PhotoViewModel>? PhotoSelected;
+
     public void SelectPhoto(PhotoViewModel? p) => SelectedPhoto = p;
     public PhotoViewModel? SelectedPhoto
     {
@@ -360,7 +362,10 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (_selectedPhoto != value)
             {
+                if (_selectedPhoto != null) _selectedPhoto.IsSelected = false;
                 _selectedPhoto = value;
+                if (_selectedPhoto != null) _selectedPhoto.IsSelected = true;
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasSelection));
                 OnPropertyChanged(nameof(HasSelectedPhoto));
@@ -373,8 +378,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(SelectedPhotoBrightnessPercent));
                 OnPropertyChanged(nameof(SelectedPhotoQualityText));
                 OnPropertyChanged(nameof(SelectedPhotoQualityBrush));
+
                 if (_selectedPhoto != null)
                 {
+                    PhotoSelected?.Invoke(_selectedPhoto);
+
                     if (_selectedPhoto.Thumbnail == null)
                     {
                         _ = _loaderQueue.LoadThumbnailDirectAsync(_selectedPhoto);
