@@ -288,9 +288,11 @@ public partial class MainWindow : Window
     {
         try
         {
+            // Usa OpenFileDialog para que o Windows Explorer EXIBA as miniaturas de todas as fotos
+            // dentro da pasta antes de confirmar (o OpenFolderDialog tradicional do Windows oculta todos os arquivos).
             var dialog = new OpenFileDialog
             {
-                Title = "Mavi Select — Selecionar Fotos",
+                Title = "Mavi Select — Selecione qualquer foto para abrir a pasta correspondente (Miniaturas Visíveis)",
                 Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os Arquivos (*.*)|*.*",
                 Multiselect = true,
                 InitialDirectory = GetSafeInitialDirectory()
@@ -302,12 +304,13 @@ public partial class MainWindow : Window
                 if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
                 if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
 
-                string? dir = Path.GetDirectoryName(dialog.FileNames[0]);
+                string target = dialog.FileNames[0];
+                string? dir = Directory.Exists(target) ? target : Path.GetDirectoryName(target);
                 if (!string.IsNullOrEmpty(dir) && ViewModel != null)
                 {
                     await ViewModel.LoadDirectoryAsync(dir);
 
-                    string selectedFile = Path.GetFileName(dialog.FileNames[0]);
+                    string selectedFile = Path.GetFileName(target);
                     var match = ViewModel.Photos.FirstOrDefault(p => string.Equals(p.FileName, selectedFile, StringComparison.OrdinalIgnoreCase));
                     if (match != null)
                     {
@@ -323,7 +326,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Não foi possível abrir o seletor de fotos: {ex.Message}",
+                $"Não foi possível abrir o seletor: {ex.Message}",
                 "Aviso — Mavi Select",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -332,37 +335,9 @@ public partial class MainWindow : Window
 
     private async Task PromptSelectFolderOnlyAsync()
     {
-        try
-        {
-            var dialog = new OpenFolderDialog
-            {
-                Title = "Mavi Select — Selecionar Pasta com Fotos",
-                InitialDirectory = GetSafeInitialDirectory()
-            };
-
-            bool? result = dialog.ShowDialog(this);
-            if (result == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
-            {
-                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-                if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
-
-                if (ViewModel != null)
-                {
-                    await ViewModel.LoadDirectoryAsync(dialog.FolderName);
-                    ViewModel.IsWelcomeScreenVisible = false;
-                }
-
-                if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(
-                $"Não foi possível abrir a pasta selecionada: {ex.Message}",
-                "Aviso — Mavi Select",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-        }
+        // Redireciona para PromptOpenFolderAsync para que as miniaturas das fotos
+        // fiquem 100% visíveis no diálogo do Windows, permitindo conferência visual antes de abrir a pasta!
+        await PromptOpenFolderAsync();
     }
 
     private void FilterAll_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.All);

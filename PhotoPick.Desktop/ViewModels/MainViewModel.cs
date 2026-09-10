@@ -764,30 +764,22 @@ public class MainViewModel : INotifyPropertyChanged
 
     public async Task OpenFolderDialogAsync()
     {
-        var dialog = new OpenFolderDialog
-        {
-            Title = "Selecionar Pasta de Fotos RAW/JPG (O Windows mostra apenas diretórios aqui)",
-            Multiselect = false
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            await LoadDirectoryAsync(dialog.FolderName);
-        }
+        await OpenPhotosDialogAsync();
     }
 
     public async Task OpenPhotosDialogAsync()
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Selecione qualquer foto para abrir a pasta correspondente",
-            Filter = "Fotos RAW e JPEG (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg|Todos os arquivos (*.*)|*.*",
+            Title = "Mavi Select — Selecione qualquer foto para abrir a pasta correspondente (Miniaturas Visíveis)",
+            Filter = "Fotos RAW e Imagens (*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.jpg;*.jpeg)|*.dng;*.cr2;*.cr3;*.arw;*.nef;*.raf;*.orf;*.pef;*.rw2;*.jpg;*.jpeg;*.png;*.webp|Todos os arquivos (*.*)|*.*",
             Multiselect = true
         };
 
         if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
         {
-            string? dir = Path.GetDirectoryName(dialog.FileNames[0]);
+            string target = dialog.FileNames[0];
+            string? dir = Directory.Exists(target) ? target : Path.GetDirectoryName(target);
             if (!string.IsNullOrEmpty(dir))
             {
                 await LoadDirectoryAsync(dir);

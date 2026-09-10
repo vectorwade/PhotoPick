@@ -242,7 +242,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
+
+
 <!-- ESTILO BOTÃO LATERAL NAVEGAÇÃO -->
         <Style x:Key="NavListBtn" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -1086,7 +1087,7 @@
                     <!-- Botão Secundário: Selecionar Pasta com Fotos -->
                     <Button Style="{StaticResource IdeToolBtn}" Click="BtnWelcomeFolderOnly_Click"
                             Background="#252525" Padding="16,8" Margin="0,0,0,12" HorizontalAlignment="Stretch"
-                            ToolTip="Selecionar uma pasta inteira de fotos diretamente pelo Windows">
+                            ToolTip="Abre o explorador exibindo as miniaturas das fotos da pasta para você conferir antes de carregar">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock Text="📁 " FontSize="12"/>
                             <TextBlock Text="Selecionar Pasta com Fotos" FontSize="11.5" Foreground="{DynamicResource TextNormal}"/>
