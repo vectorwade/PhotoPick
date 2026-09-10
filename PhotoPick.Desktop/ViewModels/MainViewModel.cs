@@ -40,6 +40,12 @@ public class MainViewModel : INotifyPropertyChanged
     private string _filterName = "Todas";
     private int _columnsPerRow = 4;
 
+    private readonly PhotoPick.Core.Services.LicenseManager _licenseManager;
+    private LicenseState _licenseState = new();
+    private string _enteredLicenseKey = string.Empty;
+    private string _licenseErrorMessage = string.Empty;
+    private bool _isLicenseDialogOpen;
+
     public CullingSession Session => _session;
     public ObservableCollection<PhotoViewModel> Photos { get; } = [];
     public ObservableCollection<PhotoRowViewModel> Rows { get; } = [];
@@ -219,6 +225,168 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     public bool IsWorkspaceVisible => !IsDashboardVisible;
+
+    public LicenseState LicenseState
+    {
+        get => _licenseState;
+        private set
+        {
+            _licenseState = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsLicenseLocked));
+            OnPropertyChanged(nameof(IsTrialActive));
+            OnPropertyChanged(nameof(IsTrialExpired));
+            OnPropertyChanged(nameof(IsClockTampered));
+            OnPropertyChanged(nameof(TrialDaysRemaining));
+            OnPropertyChanged(nameof(TrialBadgeText));
+            OnPropertyChanged(nameof(MachineId));
+            OnPropertyChanged(nameof(LicenseStatusMessage));
+            OnPropertyChanged(nameof(IsLicenseOverlayVisible));
+            OnPropertyChanged(nameof(CanDismissLicenseOverlay));
+            OnPropertyChanged(nameof(LicenseLockTitle));
+            OnPropertyChanged(nameof(LicenseLockSubtitle));
+            OnPropertyChanged(nameof(LicenseExitButtonText));
+        }
+    }
+
+    public bool IsLicenseLocked => !_licenseState.CanUseApp;
+    public bool IsTrialActive => !_licenseState.IsActivated && _licenseState.CanUseApp;
+    public bool IsTrialExpired => _licenseState.IsTrialExpired;
+    public bool IsClockTampered => _licenseState.IsTampered;
+    public int TrialDaysRemaining => _licenseState.DaysRemaining;
+    public string TrialBadgeText => _licenseState.IsActivated 
+        ? "✔ Licença Ativada" 
+        : $"⏳ Teste: {_licenseState.DaysRemaining} dia(s)";
+    public string MachineId => _licenseState.MachineId;
+    public string LicenseStatusMessage => _licenseState.StatusMessage;
+
+    public bool IsLicenseOverlayVisible => IsLicenseLocked || IsLicenseDialogOpen;
+    public bool CanDismissLicenseOverlay => !IsLicenseLocked;
+
+    public string LicenseLockTitle
+    {
+        get
+        {
+            if (IsClockTampered) return "Alteração de Data do Sistema Detectada";
+            if (IsTrialExpired) return "Período de Avaliação Encerrado";
+            if (_licenseState.IsActivated) return "Mavi Select — Licença Vitalícia Ativada";
+            return $"Mavi Select — Avaliação ({TrialDaysRemaining} dias restantes)";
+        }
+    }
+
+    public string LicenseLockSubtitle
+    {
+        get
+        {
+            if (IsClockTampered) 
+                return "O relógio do Windows foi retrocedido para uma data anterior à última execução. Para continuar, sincronize a data/hora correta ou insira sua chave de ativação vitalícia.";
+            if (IsTrialExpired) 
+                return "Seu período de teste gratuito de 10 dias expirou. Para desbloquear o Mavi Select permanentemente e continuar selecionando suas fotos com máxima velocidade, insira sua chave de ativação.";
+            if (_licenseState.IsActivated) 
+                return "Sua cópia do Mavi Select está ativada com sucesso e com todos os recursos profissionais liberados permanentemente para este computador.";
+            return $"Você está no período de avaliação gratuita com todos os recursos liberados ({TrialDaysRemaining} dia(s) restante(s)). Deseja registrar sua chave de ativação definitiva?";
+        }
+    }
+
+    public string LicenseExitButtonText => IsLicenseLocked ? "Sair do Aplicativo" : "Continuar Avaliação";
+
+    public string EnteredLicenseKey
+    {
+        get => _enteredLicenseKey;
+        set
+        {
+            if (_enteredLicenseKey != value)
+            {
+                _enteredLicenseKey = value;
+                OnPropertyChanged();
+                LicenseErrorMessage = string.Empty;
+            }
+        }
+    }
+
+    public string LicenseErrorMessage
+    {
+        get => _licenseErrorMessage;
+        set { _licenseErrorMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasLicenseError)); }
+    }
+
+    public bool HasLicenseError => !string.IsNullOrEmpty(_licenseErrorMessage);
+
+    public bool IsLicenseDialogOpen
+    {
+        get => _isLicenseDialogOpen;
+        set
+        {
+            _isLicenseDialogOpen = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsLicenseOverlayVisible));
+            OnPropertyChanged(nameof(CanDismissLicenseOverlay));
+            OnPropertyChanged(nameof(LicenseLockTitle));
+            OnPropertyChanged(nameof(LicenseLockSubtitle));
+            OnPropertyChanged(nameof(LicenseExitButtonText));
+        }
+    }
+
+    public void RefreshLicenseState()
+    {
+        LicenseState = _licenseManager.GetLicenseState();
+    }
+
+    public bool TryActivateLicense()
+    {
+        if (string.IsNullOrWhiteSpace(EnteredLicenseKey))
+        {
+            LicenseErrorMessage = "Por favor, digite ou cole sua chave de ativação.";
+            return false;
+        }
+
+        bool ok = _licenseManager.Activate(EnteredLicenseKey);
+        if (ok)
+        {
+            LicenseErrorMessage = string.Empty;
+            RefreshLicenseState();
+            IsLicenseDialogOpen = false;
+            StatusMessage = "Mavi Select ativado com sucesso! Licença vitalícia vinculada.";
+            MessageBox.Show(
+                "O Mavi Select foi ativado com sucesso!\n\nSua licença vitalícia está confirmada para este computador.",
+                "Ativação Concluída",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return true;
+        }
+        else
+        {
+            LicenseErrorMessage = "Chave de ativação inválida para este computador. Verifique os caracteres e tente novamente.";
+            return false;
+        }
+    }
+
+    public void CopyMachineId()
+    {
+        try
+        {
+            Clipboard.SetText(MachineId);
+            StatusMessage = $"ID da Máquina ({MachineId}) copiado para a Área de Transferência!";
+        }
+        catch { }
+    }
+
+    public void OpenLicenseDialog()
+    {
+        LicenseErrorMessage = string.Empty;
+        EnteredLicenseKey = string.Empty;
+        IsLicenseDialogOpen = true;
+    }
+
+    public void CloseLicenseDialog()
+    {
+        IsLicenseDialogOpen = false;
+    }
+
+    public void ExitApplication()
+    {
+        Application.Current.Shutdown();
+    }
 
     public bool IsAutoAdvanceEnabled
     {
@@ -477,6 +645,9 @@ public class MainViewModel : INotifyPropertyChanged
         _lightroomService = new LightroomService();
         _loaderQueue = new ThumbnailLoaderQueue(_session, _extractor, _session.CacheService);
         _loaderQueue.Start();
+
+        _licenseManager = new PhotoPick.Core.Services.LicenseManager();
+        RefreshLicenseState();
 
         _session.StatsChanged += RefreshStats;
     }

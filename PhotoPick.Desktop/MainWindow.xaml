@@ -306,6 +306,14 @@
                             ToolTip="Guia de Recursos, Atalhos de Teclado e Gamepad (F1 ou H)">
                         <TextBlock Text="❓ Ajuda" FontSize="11.5"/>
                     </Button>
+
+                    <!-- Indicador de Licença / Teste (Trial Badge) -->
+                    <Button Style="{StaticResource IdeToolBtn}" Click="BtnLicenseInfo_Click" Margin="0,0,4,0"
+                            ToolTip="Status da Licença e Ativação do Mavi Select">
+                        <Border Background="#1E293B" CornerRadius="12" Padding="8,3" BorderBrush="#3B82F6" BorderThickness="1">
+                            <TextBlock Text="{Binding TrialBadgeText, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#60A5FA"/>
+                        </Border>
+                    </Button>
                 </StackPanel>
 
                 <!-- Ações Principais: Exportar e Lr Sincronizar (Alinhados à Direita) -->
@@ -1289,6 +1297,134 @@
                             <TextBlock Text="Entendi, fechar ajuda [Esc]" FontSize="11.5" Foreground="#FFFFFF"/>
                         </Button>
                     </DockPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================== -->
+        <!-- OVERLAY DE LICENÇA / TRIAL LOCK (ANTIGRAVITY DARK STYLE)       -->
+        <!-- ============================================================== -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="9999" Background="#CC000000"
+              MouseLeftButtonDown="LicenseOverlayBackdrop_MouseLeftButtonDown"
+              Visibility="{Binding IsLicenseOverlayVisible, Converter={StaticResource BoolToVis}}">
+            <Border Background="#121214" BorderBrush="#2D3748" BorderThickness="1.5"
+                    CornerRadius="16" Padding="36,32" Width="600"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MouseLeftButtonDown="LicenseCard_MouseLeftButtonDown">
+                <Border.Effect>
+                    <DropShadowEffect Color="#000000" BlurRadius="40" ShadowDepth="12" Opacity="0.8"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Fechar (Visível apenas se NÃO estiver travado / avaliação ativa) -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Top" 
+                            Style="{StaticResource CaptionBtn}" Click="BtnCloseLicense_Click"
+                            Visibility="{Binding CanDismissLicenseOverlay, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Fechar [Esc]">
+                        <TextBlock Text="✕" FontSize="14" Foreground="{DynamicResource TextMuted}"/>
+                    </Button>
+
+                    <!-- Cabeçalho / Ícone / Título -->
+                    <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,24">
+                        <Border Width="64" Height="64" CornerRadius="32" 
+                                Background="#1A1D24" BorderBrush="#3B82F6" BorderThickness="1.5"
+                                HorizontalAlignment="Center" Margin="0,0,0,16">
+                            <TextBlock Text="🔒" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <TextBlock Text="Mavi Select" FontSize="13" FontWeight="SemiBold" Foreground="#3B82F6"
+                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+
+                        <!-- Título do Estado -->
+                        <TextBlock Text="{Binding LicenseLockTitle, Mode=OneWay}" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF"
+                                   HorizontalAlignment="Center" TextAlignment="Center"/>
+
+                        <!-- Subtítulo / Explicação -->
+                        <TextBlock Text="{Binding LicenseLockSubtitle, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource TextMuted}"
+                                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Margin="10,8,10,0" LineHeight="18"/>
+                    </StackPanel>
+
+                    <!-- Conteúdo: Machine ID & Chave de Ativação -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,24">
+                        <!-- Machine ID -->
+                        <TextBlock Text="ID DA MÁQUINA (HARDWARE IDENTIFIER):" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding MachineId, Mode=OneWay}" IsReadOnly="True"
+                                     Background="#18181B" Foreground="#E4E4E7" BorderBrush="#27272A" BorderThickness="1"
+                                     Padding="12,10" FontSize="13" FontFamily="Consolas, monospace" FontWeight="Bold"
+                                     VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Style="{StaticResource IdeToolBtn}" Click="BtnLockCopyMachineId_Click"
+                                    Margin="8,0,0,0" Padding="14,10" Background="#27272A" BorderBrush="#3F3F46">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📋 " FontSize="12"/>
+                                    <TextBlock Text="Copiar ID" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Chave de Ativação -->
+                        <TextBlock Text="CHAVE DE ATIVAÇÃO VITALÍCIA:" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,6"/>
+                        <TextBox Text="{Binding EnteredLicenseKey, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#18181B" Foreground="#60A5FA" BorderBrush="#3B82F6" BorderThickness="1.5"
+                                 Padding="12,10" FontSize="13.5" FontFamily="Consolas, monospace" FontWeight="Bold"
+                                 VerticalAlignment="Center" CharacterCasing="Upper"/>
+
+                        <!-- Mensagem de Erro (se houver) -->
+                        <Border Background="#2D1515" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6"
+                                Padding="12,8" Margin="0,12,0,0"
+                                Visibility="{Binding HasLicenseError, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠️ " FontSize="12"/>
+                                <TextBlock Text="{Binding LicenseErrorMessage, Mode=OneWay}" FontSize="11.5" Foreground="#FCA5A5" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Botões de Ação -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Botão Sair / Fechar -->
+                        <Button Grid.Column="0" Style="{StaticResource IdeToolBtn}" Click="BtnLockExit_Click"
+                                Margin="0,0,8,0" Padding="16,12" Background="#27272A" BorderBrush="#3F3F46">
+                            <TextBlock Text="{Binding LicenseExitButtonText, Mode=OneWay}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                        </Button>
+
+                        <!-- Botão Ativar -->
+                        <Button Grid.Column="1" Click="BtnLockActivate_Click"
+                                Margin="8,0,0,0" Padding="16,12" Background="#2563EB" BorderBrush="#3B82F6" BorderThickness="1"
+                                Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1D4ED8"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="🔑 " FontSize="13"/>
+                                <TextBlock Text="Ativar Mavi Select" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

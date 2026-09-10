@@ -515,6 +515,22 @@ public partial class MainWindow : Window
 
     private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (ViewModel.IsLicenseLocked)
+        {
+            // O app está travado aguardando chave. Não processa atalhos.
+            return;
+        }
+
+        if (ViewModel.IsLicenseDialogOpen)
+        {
+            if (e.Key is Key.Escape)
+            {
+                ViewModel.CloseLicenseDialog();
+                e.Handled = true;
+            }
+            return;
+        }
+
         if (ViewModel.IsHelpModalOpen)
         {
             if (e.Key is Key.Escape or Key.F1 or Key.H)
@@ -672,6 +688,59 @@ public partial class MainWindow : Window
             if (WelcomeOverlayGrid != null) WelcomeOverlayGrid.Visibility = Visibility.Collapsed;
             if (ViewModel != null) ViewModel.IsWelcomeScreenVisible = false;
         }
+    }
+
+    #endregion
+
+    #region Licença e Ativação
+
+    private void BtnLicenseInfo_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.OpenLicenseDialog();
+    }
+
+    private void BtnLockCopyMachineId_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CopyMachineId();
+    }
+
+    private void BtnLockActivate_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.TryActivateLicense();
+    }
+
+    private void BtnLockExit_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsLicenseLocked)
+        {
+            ViewModel.ExitApplication();
+        }
+        else
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+
+    private void BtnCloseLicense_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.CanDismissLicenseOverlay)
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+
+    private void LicenseOverlayBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ViewModel.CanDismissLicenseOverlay)
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+
+    private void LicenseCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Evita que o clique dentro do card feche o modal
+        e.Handled = true;
     }
 
     #endregion
