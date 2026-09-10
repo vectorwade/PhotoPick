@@ -98,6 +98,8 @@ public class ThumbnailLoaderQueue
                         var bmp = ImageHelper.LoadBitmapFromFile(thumbPath, item.Orientation, decodePixelWidth: 320);
                         if (bmp != null)
                         {
+                            ImageQualityHelper.AnalyzeAndApply(bmp, item.Model);
+
                             await Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 item.Thumbnail = bmp;

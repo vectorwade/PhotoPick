@@ -23,6 +23,168 @@ public class PhotoItem : INotifyPropertyChanged
     public int Height { get; set; }
     public int Orientation { get; set; } = 1;
 
+    // Metadados EXIF
+    public string? CameraModel { get; set; }
+    public string? CameraMake { get; set; }
+    public bool? FlashFired { get; set; }
+
+    // Análise Inteligente de Qualidade
+    private bool _isBlurry;
+    private bool _isUnderexposed;
+    private bool _isOverexposed;
+    private double _sharpnessScore;
+    private double _brightnessScore;
+
+    public bool IsBlurry
+    {
+        get => _isBlurry;
+        set
+        {
+            if (_isBlurry != value)
+            {
+                _isBlurry = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasDefect));
+                OnPropertyChanged(nameof(IsGoodQuality));
+                OnPropertyChanged(nameof(QualityDefectLabel));
+            }
+        }
+    }
+
+    public bool IsUnderexposed
+    {
+        get => _isUnderexposed;
+        set
+        {
+            if (_isUnderexposed != value)
+            {
+                _isUnderexposed = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasDefect));
+                OnPropertyChanged(nameof(IsGoodQuality));
+                OnPropertyChanged(nameof(QualityDefectLabel));
+            }
+        }
+    }
+
+    public bool IsOverexposed
+    {
+        get => _isOverexposed;
+        set
+        {
+            if (_isOverexposed != value)
+            {
+                _isOverexposed = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasDefect));
+                OnPropertyChanged(nameof(IsGoodQuality));
+                OnPropertyChanged(nameof(QualityDefectLabel));
+            }
+        }
+    }
+
+    public double SharpnessScore
+    {
+        get => _sharpnessScore;
+        set
+        {
+            if (Math.Abs(_sharpnessScore - value) > 0.001)
+            {
+                _sharpnessScore = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public double BrightnessScore
+    {
+        get => _brightnessScore;
+        set
+        {
+            if (Math.Abs(_brightnessScore - value) > 0.001)
+            {
+                _brightnessScore = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool HasDefect => _isBlurry || _isUnderexposed || _isOverexposed;
+    public bool IsGoodQuality => !HasDefect;
+
+    public string? QualityDefectLabel
+    {
+        get
+        {
+            if (_isBlurry) return "🌫️ Embaçada";
+            if (_isUnderexposed) return "🌑 Escura";
+            if (_isOverexposed) return "☀️ Estourada";
+            return null;
+        }
+    }
+
+    // Stacking de Rajadas (Burst Mode)
+    private string? _burstGroupId;
+    private int _burstIndex = 1;
+    private int _burstTotal = 1;
+    private bool _isBurstLead;
+
+    public string? BurstGroupId
+    {
+        get => _burstGroupId;
+        set
+        {
+            if (_burstGroupId != value)
+            {
+                _burstGroupId = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsInBurst));
+            }
+        }
+    }
+
+    public int BurstIndex
+    {
+        get => _burstIndex;
+        set
+        {
+            if (_burstIndex != value)
+            {
+                _burstIndex = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public int BurstTotal
+    {
+        get => _burstTotal;
+        set
+        {
+            if (_burstTotal != value)
+            {
+                _burstTotal = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsInBurst));
+            }
+        }
+    }
+
+    public bool IsBurstLead
+    {
+        get => _isBurstLead;
+        set
+        {
+            if (_isBurstLead != value)
+            {
+                _isBurstLead = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsInBurst => _burstTotal > 1;
+
     public string XmpPath => Path.ChangeExtension(FilePath, ".xmp");
     public bool HasXmp => File.Exists(XmpPath);
 

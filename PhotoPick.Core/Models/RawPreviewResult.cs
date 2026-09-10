@@ -12,6 +12,11 @@ public class RawPreviewResult
     public double ElapsedMilliseconds { get; init; }
     public string? ErrorMessage { get; init; }
 
+    public string? CameraModel { get; init; }
+    public string? CameraMake { get; init; }
+    public bool? FlashFired { get; init; }
+    public DateTime? DateTaken { get; init; }
+
     public static RawPreviewResult Fail(string error, double elapsedMs = 0) => new()
     {
         Success = false,
@@ -19,13 +24,26 @@ public class RawPreviewResult
         ElapsedMilliseconds = elapsedMs
     };
 
-    public static RawPreviewResult Ok(byte[] jpegBytes, int orientation = 1, int width = 0, int height = 0, double elapsedMs = 0) => new()
+    public static RawPreviewResult Ok(
+        byte[] jpegBytes, 
+        int orientation = 1, 
+        int width = 0, 
+        int height = 0, 
+        double elapsedMs = 0,
+        string? cameraModel = null,
+        string? cameraMake = null,
+        bool? flashFired = null,
+        DateTime? dateTaken = null) => new()
     {
         Success = true,
         JpegBytes = jpegBytes,
         Orientation = orientation,
         Width = width,
         Height = height,
-        ElapsedMilliseconds = elapsedMs
+        ElapsedMilliseconds = elapsedMs,
+        CameraModel = cameraModel,
+        CameraMake = cameraMake,
+        FlashFired = flashFired,
+        DateTaken = dateTaken
     };
 }

@@ -40,6 +40,27 @@ O **MaviSelect** é uma alternativa moderna, leve e sob medida ao Photo Mechanic
 - **Gravação XMP Atômica e Não-Destrutiva:** Salva notas (`xmp:Rating`) e rótulos (`xmp:Label="Green"`) sem alterar direitos autorais ou metadados de câmera existentes.
 - **Exportação Rápida:** Botão para copiar apenas as fotos escolhidas para qualquer pasta ou pendrive em um clique.
 
+### 🧠 Pré-Seleção Inteligente de Qualidade
+- **Detecção Automática de Defeitos:** Análise instantânea em segundo plano durante o carregamento:
+  - 🌫️ **Embaçadas / Fora de Foco:** Cálculo de variância laplaciana de nitidez.
+  - 🌑 **Muito Escuras (Subexpostas):** Mapeamento de luminância média e corte de sombras.
+  - ☀️ **Muito Claras (Estouradas/Hiperexpostas):** Mapeamento de estresse em altas luzes.
+  - ✨ **Fotos Boas:** Filtragem imediata das fotos com nitidez e exposição balanceadas.
+- **Filtros por Câmera & Flash:** Separação instantânea por modelo de equipamento e auditoria de disparo de flash (EXIF).
+
+### 🔍 Focus Peaking em Tempo Real
+- **Inspeção Rápida de Foco:** Ative com a tecla `F` ou pelo botão no modo zoom para ver contornos em contraste alto destacados em **verde neon fluorescente**, validando foco nos olhos do modelo sem esperar zoom 100%.
+
+### ⚡ Agrupamento Inteligente de Rajadas (Burst Stacking)
+- **Detecção Automática de Sequências:** Fotos tiradas com intervalo menor que 1,5s são agrupadas em rajadas (`⚡ Rajada 1/N`).
+- **Escolha Rápida:** Botão de um clique para **"Escolher Esta e Rejeitar Outras da Rajada"**, acelerando a triagem de sequências em movimento.
+
+### 🏠 Dashboard & Interface Adaptativa
+- **Tela de Apresentação e Métricas:** Clique no logotipo **Mavi Select** a qualquer momento para abrir o Dashboard central de novos projetos, estatísticas da sessão e guia rápido.
+- **Ajuda Integrada (`F1` ou `H`):** Modal interativo com todos os recursos e atalhos detalhados.
+- **Grade Adaptativa:** Redimensionamento inteligente com cálculo dinâmico de colunas para telas compactas até monitores ultrawide.
+- **Auto-Avanço & Cache Preditivo em RAM:** Avança automaticamente para a próxima foto ao votar e pré-carrega as próximas 3 fotos na memória para transição instantânea de 0ms.
+
 ---
 
 ## ⌨️ Atalhos de Teclado
@@ -49,6 +70,8 @@ O **MaviSelect** é uma alternativa moderna, leve e sob medida ao Photo Mechanic
 | `P` | Marcar como **Pick** (1 Estrela + Rótulo Verde) e avançar |
 | `X` | Marcar como **Reject** (Rótulo Vermelho) e avançar |
 | `U` | Limpar marcações (**Unflag**) e avançar |
+| `F` | Alternar **Focus Peaking** (destaque de foco em verde neon) |
+| `F1` ou `H` | Abrir Central de Ajuda & Guia de Recursos |
 | `1` a `5` | Classificar com 1 a 5 estrelas |
 | `0` | Limpar estrelas |
 | `6` a `9` | Rótulos de cor (Vermelho, Amarelo, Verde, Azul) |

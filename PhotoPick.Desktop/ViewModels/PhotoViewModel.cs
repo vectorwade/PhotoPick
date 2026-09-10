@@ -201,6 +201,41 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     #endregion
 
+    #region Qualidade e Rajadas
+
+    public bool IsBlurry => _model.IsBlurry;
+    public bool IsUnderexposed => _model.IsUnderexposed;
+    public bool IsOverexposed => _model.IsOverexposed;
+    public bool HasDefect => _model.HasDefect;
+    public bool IsGoodQuality => _model.IsGoodQuality;
+    public string? QualityDefectLabel => _model.QualityDefectLabel;
+
+    public bool IsInBurst => _model.IsInBurst;
+    public bool IsBurstLead => _model.IsBurstLead;
+    public string BurstBadgeText => $"⚡ Rajada ({_model.BurstIndex}/{_model.BurstTotal})";
+    public string? CameraModel => _model.CameraModel;
+    public bool? FlashFired => _model.FlashFired;
+
+    private static readonly SolidColorBrush BrushBlurry = new(Color.FromRgb(155, 89, 182));
+    private static readonly SolidColorBrush BrushUnderexposed = new(Color.FromRgb(52, 73, 94));
+    private static readonly SolidColorBrush BrushOverexposed = new(Color.FromRgb(230, 126, 34));
+    private static readonly SolidColorBrush BrushBurst = new(Color.FromRgb(41, 128, 185));
+
+    public Brush QualityBadgeBrush
+    {
+        get
+        {
+            if (IsBlurry) return BrushBlurry;
+            if (IsUnderexposed) return BrushUnderexposed;
+            if (IsOverexposed) return BrushOverexposed;
+            return Brushes.Transparent;
+        }
+    }
+
+    public Brush BurstBadgeBrush => BrushBurst;
+
+    #endregion
+
     public PhotoViewModel(PhotoItem model, CullingSession session)
     {
         _model = model;
@@ -211,6 +246,22 @@ public class PhotoViewModel : INotifyPropertyChanged
             if (e.PropertyName is nameof(PhotoItem.Rating) or nameof(PhotoItem.ColorLabel))
             {
                 NotifyRatingAndAuraChanged();
+            }
+            else if (e.PropertyName is nameof(PhotoItem.IsBlurry) or nameof(PhotoItem.IsUnderexposed) or nameof(PhotoItem.IsOverexposed))
+            {
+                OnPropertyChanged(nameof(IsBlurry));
+                OnPropertyChanged(nameof(IsUnderexposed));
+                OnPropertyChanged(nameof(IsOverexposed));
+                OnPropertyChanged(nameof(HasDefect));
+                OnPropertyChanged(nameof(IsGoodQuality));
+                OnPropertyChanged(nameof(QualityDefectLabel));
+                OnPropertyChanged(nameof(QualityBadgeBrush));
+            }
+            else if (e.PropertyName is nameof(PhotoItem.BurstGroupId) or nameof(PhotoItem.BurstTotal))
+            {
+                OnPropertyChanged(nameof(IsInBurst));
+                OnPropertyChanged(nameof(IsBurstLead));
+                OnPropertyChanged(nameof(BurstBadgeText));
             }
         };
     }

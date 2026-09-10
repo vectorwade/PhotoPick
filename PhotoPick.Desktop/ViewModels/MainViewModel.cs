@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using PhotoPick.Core.Models;
 using PhotoPick.Core.Services;
@@ -22,19 +23,139 @@ public class MainViewModel : INotifyPropertyChanged
     private readonly IRawPreviewExtractor _extractor;
     private readonly LightroomService _lightroomService;
     private readonly ThumbnailLoaderQueue _loaderQueue;
+    private readonly PredictivePrecacheService _precacheService = new();
 
     private bool _isLoadingFolder;
     private bool _isSavingXmp;
     private bool _isExporting;
     private bool _isSingleViewMode;
+    private bool _isDashboardVisible;
+    private bool _isAutoAdvanceEnabled = true;
+    private bool _isFocusPeakingActive;
+    private bool _isHelpModalOpen;
     private PhotoViewModel? _selectedPhoto;
     private ImageSource? _loupeImage;
+    private ImageSource? _peakingOverlayImage;
     private string _statusMessage = "Pronto para abrir uma pasta de fotos ou arrastar arquivos aqui.";
     private string _filterName = "Todas";
+    private int _columnsPerRow = 4;
 
     public CullingSession Session => _session;
     public ObservableCollection<PhotoViewModel> Photos { get; } = [];
     public ObservableCollection<PhotoRowViewModel> Rows { get; } = [];
+    public ObservableCollection<string> CameraList { get; } = ["Todas as Câmeras"];
+
+    public string WindowTitle => "Mavi Select";
+
+    public bool IsDashboardVisible
+    {
+        get => _isDashboardVisible;
+        set
+        {
+            if (_isDashboardVisible != value)
+            {
+                _isDashboardVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsWorkspaceVisible));
+            }
+        }
+    }
+
+    public bool IsWorkspaceVisible => !IsDashboardVisible;
+
+    public bool IsAutoAdvanceEnabled
+    {
+        get => _isAutoAdvanceEnabled;
+        set
+        {
+            if (_isAutoAdvanceEnabled != value)
+            {
+                _isAutoAdvanceEnabled = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(AutoAdvanceLabel));
+            }
+        }
+    }
+
+    public string AutoAdvanceLabel => IsAutoAdvanceEnabled ? "⚡ Auto-Advance (ON)" : "⏸ Auto-Advance (OFF)";
+
+    public bool IsFocusPeakingActive
+    {
+        get => _isFocusPeakingActive;
+        set
+        {
+            if (_isFocusPeakingActive != value)
+            {
+                _isFocusPeakingActive = value;
+                OnPropertyChanged();
+                UpdatePeakingOverlay();
+            }
+        }
+    }
+
+    public ImageSource? PeakingOverlayImage
+    {
+        get => _peakingOverlayImage;
+        private set
+        {
+            _peakingOverlayImage = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasPeakingOverlay));
+        }
+    }
+
+    public bool HasPeakingOverlay => _isFocusPeakingActive && _peakingOverlayImage != null;
+
+    public bool IsHelpModalOpen
+    {
+        get => _isHelpModalOpen;
+        set
+        {
+            if (_isHelpModalOpen != value)
+            {
+                _isHelpModalOpen = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _selectedCamera = "Todas as Câmeras";
+    public string SelectedCamera
+    {
+        get => _selectedCamera;
+        set
+        {
+            if (_selectedCamera != value)
+            {
+                _selectedCamera = value;
+                OnPropertyChanged();
+                _session.SetCameraFilter(value == "Todas as Câmeras" ? null : value);
+                RebuildViewModels();
+            }
+        }
+    }
+
+    private string _selectedFlashFilter = "Todos";
+    public string SelectedFlashFilter
+    {
+        get => _selectedFlashFilter;
+        set
+        {
+            if (_selectedFlashFilter != value)
+            {
+                _selectedFlashFilter = value;
+                OnPropertyChanged();
+                bool? f = value switch
+                {
+                    "⚡ Flash Disparou" => true,
+                    "🚫 Sem Flash" => false,
+                    _ => null
+                };
+                _session.SetFlashFilter(f);
+                RebuildViewModels();
+            }
+        }
+    }
 
     public bool IsLoadingFolder
     {
@@ -118,6 +239,13 @@ public class MainViewModel : INotifyPropertyChanged
     public int RejectedCount => _session.RejectedCount;
     public int UnflaggedCount => _session.UnflaggedCount;
     public int UnsavedCount => _session.UnsavedCount;
+
+    // Contagens de Qualidade e Rajadas
+    public int GoodCount => _session.GoodCount;
+    public int BlurryCount => _session.BlurryCount;
+    public int UnderexposedCount => _session.UnderexposedCount;
+    public int OverexposedCount => _session.OverexposedCount;
+    public int BurstCount => _session.BurstCount;
 
     public int Star5Count => _session.RatingCount(5);
     public int Star4Count => _session.RatingCount(4);
@@ -439,7 +567,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (SelectedPhoto == null) return;
         SelectedPhoto.Rating = rating;
         StatusMessage = rating > 0 ? $"Classificado: {rating} estrelas ({SelectedPhoto.FileName})" : $"Classificação removida ({SelectedPhoto.FileName})";
-        NextPhoto();
+        if (IsAutoAdvanceEnabled) NextPhoto();
     }
 
     public void TogglePickSelected()
@@ -449,7 +577,7 @@ public class MainViewModel : INotifyPropertyChanged
         StatusMessage = SelectedPhoto.IsPicked
             ? $"[PICK] Selecionada! 1 Estrela + Rótulo Verde + Aura Verde ({SelectedPhoto.FileName})"
             : $"Seleção removida ({SelectedPhoto.FileName})";
-        NextPhoto();
+        if (IsAutoAdvanceEnabled) NextPhoto();
     }
 
     public void ToggleRejectSelected()
@@ -459,7 +587,15 @@ public class MainViewModel : INotifyPropertyChanged
         StatusMessage = SelectedPhoto.IsRejected
             ? $"[REJECT] Rejeitada! Rótulo Vermelho + Aura Vermelha ({SelectedPhoto.FileName})"
             : $"Rejeição removida ({SelectedPhoto.FileName})";
-        NextPhoto();
+        if (IsAutoAdvanceEnabled) NextPhoto();
+    }
+
+    public void PickCurrentBurstBest()
+    {
+        if (SelectedPhoto == null) return;
+        var affected = _session.PickBurstBest(SelectedPhoto.Model);
+        StatusMessage = $"[RAJADA] Foto {SelectedPhoto.FileName} selecionada e {affected.Count - 1} fotos da sequência rejeitadas.";
+        if (IsAutoAdvanceEnabled) NextPhoto();
     }
 
     public void ClearSelected()
@@ -481,13 +617,89 @@ public class MainViewModel : INotifyPropertyChanged
         IsSingleViewMode = !IsSingleViewMode;
     }
 
+    public void ToggleAutoAdvance()
+    {
+        IsAutoAdvanceEnabled = !IsAutoAdvanceEnabled;
+    }
+
+    public void ToggleFocusPeaking()
+    {
+        IsFocusPeakingActive = !IsFocusPeakingActive;
+    }
+
+    public void ShowDashboard() => IsDashboardVisible = true;
+    public void HideDashboard() => IsDashboardVisible = false;
+    public void OpenHelpModal() => IsHelpModalOpen = true;
+    public void CloseHelpModal() => IsHelpModalOpen = false;
+
+    #region Filtros de Qualidade e Rajadas
+
+    public void FilterGood()
+    {
+        _session.ApplyFilter(PhotoFilterMode.GoodOnly);
+        FilterName = "✨ Boas";
+        RebuildViewModels();
+    }
+
+    public void FilterBlurry()
+    {
+        _session.ApplyFilter(PhotoFilterMode.BlurryOnly);
+        FilterName = "🌫️ Embaçadas";
+        RebuildViewModels();
+    }
+
+    public void FilterUnderexposed()
+    {
+        _session.ApplyFilter(PhotoFilterMode.UnderexposedOnly);
+        FilterName = "🌑 Muito Escuras";
+        RebuildViewModels();
+    }
+
+    public void FilterOverexposed()
+    {
+        _session.ApplyFilter(PhotoFilterMode.OverexposedOnly);
+        FilterName = "☀️ Muito Claras";
+        RebuildViewModels();
+    }
+
+    public void FilterBurstStacks()
+    {
+        _session.ApplyFilter(PhotoFilterMode.BurstStacksOnly);
+        FilterName = "⚡ Rajadas";
+        RebuildViewModels();
+    }
+
     #endregion
+
+    #endregion
+
+    public void UpdateColumnsForWidth(double availableWidth)
+    {
+        if (availableWidth <= 0) return;
+        // Ajusta colunas: de 2 a 7 colunas proporcionalmente
+        int cols = Math.Clamp((int)(availableWidth / 285), 2, 7);
+        if (cols != _columnsPerRow)
+        {
+            _columnsPerRow = cols;
+            RebuildRows();
+        }
+    }
+
+    private void RebuildRows()
+    {
+        Rows.Clear();
+        int itemsPerRow = _columnsPerRow;
+        for (int i = 0; i < Photos.Count; i += itemsPerRow)
+        {
+            var chunk = Photos.Skip(i).Take(itemsPerRow).ToArray();
+            Rows.Add(new PhotoRowViewModel(chunk));
+        }
+    }
 
     private void RebuildViewModels()
     {
         var currentSelectedPath = SelectedPhoto?.FilePath;
         Photos.Clear();
-        Rows.Clear();
 
         var viewModels = new List<PhotoViewModel>();
         foreach (var model in _session.FilteredPhotos)
@@ -497,13 +709,7 @@ public class MainViewModel : INotifyPropertyChanged
             viewModels.Add(vm);
         }
 
-        // Divide em linhas de 4 colunas para o VirtualizingStackPanel
-        int itemsPerRow = 4;
-        for (int i = 0; i < viewModels.Count; i += itemsPerRow)
-        {
-            var chunk = viewModels.Skip(i).Take(itemsPerRow).ToArray();
-            Rows.Add(new PhotoRowViewModel(chunk));
-        }
+        RebuildRows();
 
         if (currentSelectedPath != null)
         {
@@ -519,25 +725,66 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            var res = await _extractor.ExtractPreviewAsync(photo.FilePath);
-            if (res.Success && res.JpegBytes != null)
+            if (_precacheService.TryGet(photo.FilePath, out var cached) && cached != null)
             {
-                var bmp = ImageHelper.LoadBitmapFromBytes(res.JpegBytes, res.Orientation);
                 if (SelectedPhoto == photo)
                 {
-                    LoupeImage = bmp;
+                    LoupeImage = cached;
+                    if (IsFocusPeakingActive) UpdatePeakingOverlay();
                 }
             }
-            else if (File.Exists(photo.Model.ThumbnailCachePath))
+            else
             {
-                var bmp = ImageHelper.LoadBitmapFromFile(photo.Model.ThumbnailCachePath, photo.Orientation);
-                if (SelectedPhoto == photo)
+                var res = await _extractor.ExtractPreviewAsync(photo.FilePath);
+                if (res.Success && res.JpegBytes != null)
                 {
-                    LoupeImage = bmp;
+                    var bmp = ImageHelper.LoadBitmapFromBytes(res.JpegBytes, res.Orientation);
+                    if (bmp != null)
+                    {
+                        _precacheService.Store(photo.FilePath, bmp);
+                        if (SelectedPhoto == photo)
+                        {
+                            LoupeImage = bmp;
+                            if (IsFocusPeakingActive) UpdatePeakingOverlay();
+                        }
+                    }
                 }
+                else if (File.Exists(photo.Model.ThumbnailCachePath))
+                {
+                    var bmp = ImageHelper.LoadBitmapFromFile(photo.Model.ThumbnailCachePath, photo.Orientation);
+                    if (bmp != null && SelectedPhoto == photo)
+                    {
+                        LoupeImage = bmp;
+                        if (IsFocusPeakingActive) UpdatePeakingOverlay();
+                    }
+                }
+            }
+
+            int currentIdx = _session.FilteredPhotos.IndexOf(photo.Model);
+            if (currentIdx >= 0)
+            {
+                _precacheService.SchedulePrecache(_session.FilteredPhotos, currentIdx);
             }
         }
         catch { }
+    }
+
+    public void UpdatePeakingOverlay()
+    {
+        if (!IsFocusPeakingActive || LoupeImage is not BitmapSource bms)
+        {
+            PeakingOverlayImage = null;
+            return;
+        }
+
+        Task.Run(() =>
+        {
+            var overlay = FocusPeakingHelper.GeneratePeakingOverlay(bms);
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                PeakingOverlayImage = overlay;
+            });
+        });
     }
 
     private void RefreshStats()
@@ -548,11 +795,27 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RejectedCount));
         OnPropertyChanged(nameof(UnflaggedCount));
         OnPropertyChanged(nameof(UnsavedCount));
+        OnPropertyChanged(nameof(GoodCount));
+        OnPropertyChanged(nameof(BlurryCount));
+        OnPropertyChanged(nameof(UnderexposedCount));
+        OnPropertyChanged(nameof(OverexposedCount));
+        OnPropertyChanged(nameof(BurstCount));
         OnPropertyChanged(nameof(Star5Count));
         OnPropertyChanged(nameof(Star4Count));
         OnPropertyChanged(nameof(Star3Count));
         OnPropertyChanged(nameof(Star2Count));
         OnPropertyChanged(nameof(Star1Count));
+
+        // Atualiza câmeras disponíveis no ComboBox
+        var cameras = _session.AvailableCameras;
+        if (cameras.Count > 0)
+        {
+            var current = SelectedCamera;
+            CameraList.Clear();
+            CameraList.Add("Todas as Câmeras");
+            foreach (var cam in cameras) CameraList.Add(cam);
+            if (CameraList.Contains(current)) SelectedCamera = current;
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

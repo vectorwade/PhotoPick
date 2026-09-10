@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,15 +17,53 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.UpdateColumnsForWidth(e.NewSize.Width - 50);
+        }
+    }
+
+    #region Logo Home e Apresentação
+
+    private void LogoHome_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ShowDashboard();
+    }
+
+    private void BtnDashboardReturn_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.HideDashboard();
+    }
+
+    #endregion
+
+    #region Ajuda e Onboarding
+
+    private void BtnHelp_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.OpenHelpModal();
+    }
+
+    private void BtnCloseHelp_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CloseHelpModal();
+    }
+
+    #endregion
+
     #region Abertura de Pasta e Arquivos
 
     private async void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
     {
+        ViewModel.HideDashboard();
         await ViewModel.OpenFolderDialogAsync();
     }
 
     private async void BtnOpenPhotos_Click(object sender, RoutedEventArgs e)
     {
+        ViewModel.HideDashboard();
         await ViewModel.OpenPhotosDialogAsync();
     }
 
@@ -42,6 +80,16 @@ public partial class MainWindow : Window
     private async void BtnExportSelected_Click(object sender, RoutedEventArgs e)
     {
         await ViewModel.ExportSelectedToFolderAsync();
+    }
+
+    private void BtnAutoAdvance_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleAutoAdvance();
+    }
+
+    private void BtnFocusPeaking_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ToggleFocusPeaking();
     }
 
     private async void ModalBtnSubfolder_Click(object sender, MouseButtonEventArgs e)
@@ -61,12 +109,18 @@ public partial class MainWindow : Window
 
     #endregion
 
-    #region Filtros e Notas
+    #region Filtros de Qualidade, Status e Notas
 
     private void FilterAll_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.All);
+    private void FilterGood_Click(object sender, RoutedEventArgs e) => ViewModel.FilterGood();
+    private void FilterBlurry_Click(object sender, RoutedEventArgs e) => ViewModel.FilterBlurry();
+    private void FilterUnderexposed_Click(object sender, RoutedEventArgs e) => ViewModel.FilterUnderexposed();
+    private void FilterOverexposed_Click(object sender, RoutedEventArgs e) => ViewModel.FilterOverexposed();
+    private void FilterBurstStacks_Click(object sender, RoutedEventArgs e) => ViewModel.FilterBurstStacks();
+
     private void FilterPicked_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.PickedOnly);
-    private void FilterUnflagged_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.UnflaggedOnly);
     private void FilterRejected_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.RejectedOnly);
+    private void FilterUnflagged_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.UnflaggedOnly);
 
     private void FilterRating5_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating5);
     private void FilterRating4_Click(object sender, RoutedEventArgs e) => ViewModel.ApplyFilter(PhotoFilterMode.Rating4);
@@ -96,6 +150,7 @@ public partial class MainWindow : Window
         {
             photo.TogglePick();
             ViewModel.SelectedPhoto = photo;
+            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
         }
     }
 
@@ -105,6 +160,7 @@ public partial class MainWindow : Window
         {
             photo.ToggleReject();
             ViewModel.SelectedPhoto = photo;
+            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
         }
     }
 
@@ -129,6 +185,7 @@ public partial class MainWindow : Window
         {
             photo.ClickStar(star);
             ViewModel.SelectedPhoto = photo;
+            if (ViewModel.IsAutoAdvanceEnabled) ViewModel.NextPhoto();
         }
     }
 
@@ -136,20 +193,10 @@ public partial class MainWindow : Window
 
     #region Ações no Modo Loupe (Foto Única)
 
-    private void LoupePick_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.TogglePickSelected();
-    }
-
-    private void LoupeReject_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ToggleRejectSelected();
-    }
-
-    private void LoupeClear_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.ClearSelected();
-    }
+    private void LoupePick_Click(object sender, RoutedEventArgs e) => ViewModel.TogglePickSelected();
+    private void LoupeReject_Click(object sender, RoutedEventArgs e) => ViewModel.ToggleRejectSelected();
+    private void LoupeClear_Click(object sender, RoutedEventArgs e) => ViewModel.ClearSelected();
+    private void LoupeBtnBurstBest_Click(object sender, RoutedEventArgs e) => ViewModel.PickCurrentBurstBest();
 
     private void LoupeStar1_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(1);
     private void LoupeStar2_Click(object sender, RoutedEventArgs e) => ViewModel.RateSelected(2);
@@ -174,6 +221,7 @@ public partial class MainWindow : Window
                 string targetDir = Directory.Exists(files[0]) ? files[0] : Path.GetDirectoryName(files[0])!;
                 if (!string.IsNullOrEmpty(targetDir) && Directory.Exists(targetDir))
                 {
+                    ViewModel.HideDashboard();
                     await ViewModel.LoadDirectoryAsync(targetDir);
                 }
             }
@@ -213,8 +261,7 @@ public partial class MainWindow : Window
 
         switch (e.Key)
         {
-            case Key.Space:
-            case Key.Enter:
+            case Key.Space or Key.Enter:
                 e.Handled = true;
                 ViewModel.ToggleViewMode();
                 break;
@@ -232,6 +279,16 @@ public partial class MainWindow : Window
             case Key.U:
                 e.Handled = true;
                 ViewModel.ClearSelected();
+                break;
+
+            case Key.F:
+                e.Handled = true;
+                ViewModel.ToggleFocusPeaking();
+                break;
+
+            case Key.F1 or Key.H:
+                e.Handled = true;
+                ViewModel.OpenHelpModal();
                 break;
 
             case Key.D1 or Key.NumPad1:
@@ -259,24 +316,32 @@ public partial class MainWindow : Window
                 ViewModel.RateSelected(0);
                 break;
 
-            case Key.Right:
-            case Key.D:
-            case Key.K:
+            case Key.Right or Key.D or Key.K:
                 e.Handled = true;
                 ViewModel.NextPhoto();
                 break;
 
-            case Key.Left:
-            case Key.A:
-            case Key.J:
+            case Key.Left or Key.A or Key.J:
                 e.Handled = true;
                 ViewModel.PreviousPhoto();
                 break;
 
             case Key.Escape:
-                if (ViewModel.IsSingleViewMode)
+                e.Handled = true;
+                if (ViewModel.IsHelpModalOpen)
                 {
-                    e.Handled = true;
+                    ViewModel.CloseHelpModal();
+                }
+                else if (ViewModel.IsLightroomModalOpen)
+                {
+                    ViewModel.CloseLightroomModal();
+                }
+                else if (ViewModel.IsDashboardVisible && ViewModel.Photos.Count > 0)
+                {
+                    ViewModel.HideDashboard();
+                }
+                else if (ViewModel.IsSingleViewMode)
+                {
                     ViewModel.IsSingleViewMode = false;
                 }
                 break;

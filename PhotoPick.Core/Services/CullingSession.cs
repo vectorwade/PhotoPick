@@ -13,6 +13,11 @@ namespace PhotoPick.Core.Services;
 public enum PhotoFilterMode
 {
     All,
+    GoodOnly,
+    BlurryOnly,
+    UnderexposedOnly,
+    OverexposedOnly,
+    BurstStacksOnly,
     PickedOnly,
     UnflaggedOnly,
     RatedOnly,
@@ -36,6 +41,8 @@ public class CullingSession
 
     public ObservableCollection<PhotoItem> FilteredPhotos { get; } = [];
     public PhotoFilterMode CurrentFilter { get; private set; } = PhotoFilterMode.All;
+    public string? CurrentCameraFilter { get; private set; }
+    public bool? CurrentFlashFilter { get; private set; }
     public string? CurrentDirectory { get; private set; }
 
     public int TotalCount => _allPhotos.Count;
@@ -43,6 +50,20 @@ public class CullingSession
     public int RejectedCount => _allPhotos.Count(p => p.IsRejected);
     public int UnflaggedCount => _allPhotos.Count(p => !p.IsPicked && !p.IsRejected && p.Rating == 0);
     public int UnsavedCount => _allPhotos.Count(p => p.IsModified);
+
+    // Contagens de Qualidade e Rajadas
+    public int GoodCount => _allPhotos.Count(p => p.IsGoodQuality);
+    public int BlurryCount => _allPhotos.Count(p => p.IsBlurry);
+    public int UnderexposedCount => _allPhotos.Count(p => p.IsUnderexposed);
+    public int OverexposedCount => _allPhotos.Count(p => p.IsOverexposed);
+    public int BurstCount => _allPhotos.Count(p => p.IsInBurst);
+
+    public List<string> AvailableCameras => _allPhotos
+        .Where(p => !string.IsNullOrEmpty(p.CameraModel))
+        .Select(p => p.CameraModel!)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(c => c)
+        .ToList();
 
     public event Action? StatsChanged;
 
@@ -131,6 +152,9 @@ public class CullingSession
             progress?.Report((index, total));
         }
 
+        // Agrupa rajadas inicialmente
+        BurstStackingService.GroupBursts(_allPhotos);
+
         ApplyFilter(CurrentFilter);
         StatsChanged?.Invoke();
 
@@ -142,13 +166,37 @@ public class CullingSession
 
     public int RatingCount(int stars) => _allPhotos.Count(p => p.Rating == stars);
 
+    public void SetCameraFilter(string? camera)
+    {
+        CurrentCameraFilter = camera;
+        ApplyFilter(CurrentFilter);
+    }
+
+    public void SetFlashFilter(bool? flashFired)
+    {
+        CurrentFlashFilter = flashFired;
+        ApplyFilter(CurrentFilter);
+    }
+
+    public List<PhotoItem> PickBurstBest(PhotoItem item)
+    {
+        var affected = BurstStackingService.PickBestAndRejectRest(item, _allPhotos);
+        StatsChanged?.Invoke();
+        return affected;
+    }
+
     public void ApplyFilter(PhotoFilterMode mode)
     {
         CurrentFilter = mode;
         FilteredPhotos.Clear();
 
-        var query = mode switch
+        IEnumerable<PhotoItem> query = mode switch
         {
+            PhotoFilterMode.GoodOnly => _allPhotos.Where(p => p.IsGoodQuality),
+            PhotoFilterMode.BlurryOnly => _allPhotos.Where(p => p.IsBlurry),
+            PhotoFilterMode.UnderexposedOnly => _allPhotos.Where(p => p.IsUnderexposed),
+            PhotoFilterMode.OverexposedOnly => _allPhotos.Where(p => p.IsOverexposed),
+            PhotoFilterMode.BurstStacksOnly => _allPhotos.Where(p => !p.IsInBurst || p.IsBurstLead),
             PhotoFilterMode.PickedOnly => _allPhotos.Where(p => p.IsPicked),
             PhotoFilterMode.RejectedOnly => _allPhotos.Where(p => p.IsRejected),
             PhotoFilterMode.UnflaggedOnly => _allPhotos.Where(p => !p.IsPicked && !p.IsRejected && p.Rating == 0),
@@ -160,6 +208,16 @@ public class CullingSession
             PhotoFilterMode.Rating1 => _allPhotos.Where(p => p.Rating == 1),
             _ => _allPhotos.AsEnumerable()
         };
+
+        if (!string.IsNullOrEmpty(CurrentCameraFilter))
+        {
+            query = query.Where(p => string.Equals(p.CameraModel, CurrentCameraFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (CurrentFlashFilter.HasValue)
+        {
+            query = query.Where(p => p.FlashFired == CurrentFlashFilter.Value);
+        }
 
         foreach (var photo in query)
         {
@@ -316,6 +374,10 @@ public class CullingSession
                 item.Orientation = res.Orientation;
                 item.Width = res.Width;
                 item.Height = res.Height;
+                if (!string.IsNullOrEmpty(res.CameraModel)) item.CameraModel = res.CameraModel;
+                if (!string.IsNullOrEmpty(res.CameraMake)) item.CameraMake = res.CameraMake;
+                if (res.FlashFired.HasValue) item.FlashFired = res.FlashFired;
+                if (res.DateTaken.HasValue) item.DateTaken ??= res.DateTaken;
 
                 string savedPath = await _cacheService.SaveThumbnailAsync(item.FilePath, res.JpegBytes);
                 item.ThumbnailCachePath = savedPath;
@@ -354,6 +416,10 @@ public class CullingSession
         });
 
         await Task.WhenAll(tasks);
+
+        // Recalcula agrupamento de rajadas com os metadados refinados
+        BurstStackingService.GroupBursts(_allPhotos);
+        StatsChanged?.Invoke();
 
         // Salva estado de thumbnails atualizado no banco
         try

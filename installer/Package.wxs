@@ -35,7 +35,7 @@
       <Component Id="ApplicationShortcut" Guid="72D98D5B-426C-4B94-A82F-FA8D1C7657DE">
         <Shortcut Id="ApplicationStartMenuShortcut"
                   Name="MaviSelect"
-                  Description="MaviSelect — Culling Ultrarrápido de Fotos para Adobe Lightroom Classic"
+                  Description="MaviSelect"
                   Target="[INSTALLFOLDER]MaviSelect.exe"
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="AppIcon" />
@@ -48,7 +48,7 @@
       <Component Id="DesktopShortcut" Guid="C1283F41-114A-4965-BA22-55E8D2E16F71">
         <Shortcut Id="ApplicationDesktopShortcut"
                   Name="MaviSelect"
-                  Description="MaviSelect — Culling Ultrarrápido de Fotos para Adobe Lightroom Classic"
+                  Description="MaviSelect"
                   Target="[INSTALLFOLDER]MaviSelect.exe"
                   WorkingDirectory="INSTALLFOLDER"
                   Icon="AppIcon" />

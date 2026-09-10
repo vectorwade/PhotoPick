@@ -93,9 +93,9 @@ public class RawPreviewExtractor : IRawPreviewExtractor
     private static RawPreviewResult ExtractFromJpegFile(string filePath, Stopwatch sw)
     {
         var bytes = File.ReadAllBytes(filePath);
-        var (width, height, orientation) = ParseJpegInfo(bytes);
+        var (width, height, orientation, model, make, flashFired, dateTaken) = ParseJpegInfo(bytes);
         sw.Stop();
-        return RawPreviewResult.Ok(bytes, orientation, width, height, sw.Elapsed.TotalMilliseconds);
+        return RawPreviewResult.Ok(bytes, orientation, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
     }
 
     #endregion
@@ -292,10 +292,10 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             int read = fs.Read(jpegBytes, 0, (int)bestLength);
             if (read == bestLength)
             {
-                var (width, height, parsedOrient) = ParseJpegInfo(jpegBytes);
+                var (width, height, parsedOrient, model, make, flashFired, dateTaken) = ParseJpegInfo(jpegBytes);
                 int finalOrient = parsedOrient != 1 ? parsedOrient : orientation;
                 sw.Stop();
-                return RawPreviewResult.Ok(jpegBytes, finalOrient, width, height, sw.Elapsed.TotalMilliseconds);
+                return RawPreviewResult.Ok(jpegBytes, finalOrient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
             }
         }
 
@@ -315,9 +315,9 @@ public class RawPreviewExtractor : IRawPreviewExtractor
         var result = FindCr3PreviewBox(fs, 0, length);
         if (result != null)
         {
-            var (width, height, orient) = ParseJpegInfo(result);
+            var (width, height, orient, model, make, flashFired, dateTaken) = ParseJpegInfo(result);
             sw.Stop();
-            return RawPreviewResult.Ok(result, orient, width, height, sw.Elapsed.TotalMilliseconds);
+            return RawPreviewResult.Ok(result, orient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
         }
 
         return RawPreviewResult.Fail("Preview PRVW não encontrado no arquivo CR3.");
@@ -424,9 +424,9 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             byte[] jpeg = new byte[jpegLength];
             fs.ReadExactly(jpeg);
 
-            var (width, height, orient) = ParseJpegInfo(jpeg);
+            var (width, height, orient, model, make, flashFired, dateTaken) = ParseJpegInfo(jpeg);
             sw.Stop();
-            return RawPreviewResult.Ok(jpeg, orient, width, height, sw.Elapsed.TotalMilliseconds);
+            return RawPreviewResult.Ok(jpeg, orient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
         }
 
         return RawPreviewResult.Fail("Ponteiro de preview não encontrado no cabeçalho RAF.");
@@ -474,9 +474,9 @@ public class RawPreviewExtractor : IRawPreviewExtractor
         {
             byte[] jpeg = new byte[bestLength];
             Array.Copy(buffer, bestOffset, jpeg, 0, bestLength);
-            var (width, height, orient) = ParseJpegInfo(jpeg);
+            var (width, height, orient, model, make, flashFired, dateTaken) = ParseJpegInfo(jpeg);
             sw.Stop();
-            return RawPreviewResult.Ok(jpeg, orient, width, height, sw.Elapsed.TotalMilliseconds);
+            return RawPreviewResult.Ok(jpeg, orient, width, height, sw.Elapsed.TotalMilliseconds, model, make, flashFired, dateTaken);
         }
 
         return RawPreviewResult.Fail("Nenhum stream JPEG identificado na varredura.");
@@ -498,15 +498,19 @@ public class RawPreviewExtractor : IRawPreviewExtractor
 
     #region JPEG Parser de Dimensão e Orientação
 
-    public static (int width, int height, int orientation) ParseJpegInfo(ReadOnlySpan<byte> jpeg)
+    public static (int width, int height, int orientation, string? model, string? make, bool? flashFired, DateTime? dateTaken) ParseJpegInfo(ReadOnlySpan<byte> jpeg)
     {
         int width = 0;
         int height = 0;
         int orientation = 1;
+        string? model = null;
+        string? make = null;
+        bool? flashFired = null;
+        DateTime? dateTaken = null;
 
         if (jpeg.Length < 4 || jpeg[0] != 0xFF || jpeg[1] != 0xD8)
         {
-            return (width, height, orientation);
+            return (width, height, orientation, model, make, flashFired, dateTaken);
         }
 
         int pos = 2;
@@ -534,17 +538,18 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             if (pos + 2 > jpeg.Length) break;
             ushort segmentLength = BinaryPrimitives.ReadUInt16BigEndian(jpeg.Slice(pos, 2));
 
-            // Marcador APP1 (EXIF) -> Orientação
+            // Marcador APP1 (EXIF) -> Orientação e Metadados
             if (marker == 0xE1 && segmentLength > 14)
             {
                 var app1 = jpeg.Slice(pos + 2, segmentLength - 2);
                 if (app1.Length > 6 && Encoding.ASCII.GetString(app1[..4]) == "Exif" && app1[4] == 0 && app1[5] == 0)
                 {
-                    int parsedOrient = ParseExifOrientation(app1[6..]);
-                    if (parsedOrient >= 1 && parsedOrient <= 8)
-                    {
-                        orientation = parsedOrient;
-                    }
+                    var exif = ParseExifData(app1[6..]);
+                    if (exif.orientation >= 1 && exif.orientation <= 8) orientation = exif.orientation;
+                    if (!string.IsNullOrEmpty(exif.model)) model = exif.model;
+                    if (!string.IsNullOrEmpty(exif.make)) make = exif.make;
+                    if (exif.flashFired.HasValue) flashFired = exif.flashFired;
+                    if (exif.dateTaken.HasValue) dateTaken = exif.dateTaken;
                 }
             }
 
@@ -561,23 +566,31 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             pos += segmentLength;
         }
 
-        return (width, height, orientation);
+        return (width, height, orientation, model, make, flashFired, dateTaken);
     }
 
-    private static int ParseExifOrientation(ReadOnlySpan<byte> tiffData)
+    private static (int orientation, string? model, string? make, bool? flashFired, DateTime? dateTaken) ParseExifData(ReadOnlySpan<byte> tiffData)
     {
-        if (tiffData.Length < 8) return 1;
+        int orientation = 1;
+        string? model = null;
+        string? make = null;
+        bool? flashFired = null;
+        DateTime? dateTaken = null;
+
+        if (tiffData.Length < 8) return (orientation, model, make, flashFired, dateTaken);
 
         bool isLE;
         if (tiffData[0] == 0x49 && tiffData[1] == 0x49) isLE = true;
         else if (tiffData[0] == 0x4D && tiffData[1] == 0x4D) isLE = false;
-        else return 1;
+        else return (orientation, model, make, flashFired, dateTaken);
 
         uint ifd0Offset = isLE
             ? BinaryPrimitives.ReadUInt32LittleEndian(tiffData.Slice(4, 4))
             : BinaryPrimitives.ReadUInt32BigEndian(tiffData.Slice(4, 4));
 
-        if (ifd0Offset + 2 > tiffData.Length) return 1;
+        if (ifd0Offset + 2 > tiffData.Length) return (orientation, model, make, flashFired, dateTaken);
+
+        uint exifSubIfdOffset = 0;
 
         ushort entries = isLE
             ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice((int)ifd0Offset, 2))
@@ -589,16 +602,82 @@ public class RawPreviewExtractor : IRawPreviewExtractor
             ushort tag = isLE
                 ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice(entryPos, 2))
                 : BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice(entryPos, 2));
+            uint count = isLE
+                ? BinaryPrimitives.ReadUInt32LittleEndian(tiffData.Slice(entryPos + 4, 4))
+                : BinaryPrimitives.ReadUInt32BigEndian(tiffData.Slice(entryPos + 4, 4));
+            uint valOffset = isLE
+                ? BinaryPrimitives.ReadUInt32LittleEndian(tiffData.Slice(entryPos + 8, 4))
+                : BinaryPrimitives.ReadUInt32BigEndian(tiffData.Slice(entryPos + 8, 4));
 
-            if (tag == 0x0112) // Orientation
+            switch (tag)
             {
-                return isLE
-                    ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice(entryPos + 8, 2))
-                    : BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice(entryPos + 8, 2));
+                case 0x0112: // Orientation
+                    orientation = isLE
+                        ? (int)BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice(entryPos + 8, 2))
+                        : (int)BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice(entryPos + 8, 2));
+                    break;
+                case 0x0110: // Model
+                    model = ReadAsciiString(tiffData, valOffset, count);
+                    break;
+                case 0x010F: // Make
+                    make = ReadAsciiString(tiffData, valOffset, count);
+                    break;
+                case 0x8769: // Exif SubIFD
+                    exifSubIfdOffset = valOffset;
+                    break;
             }
         }
 
-        return 1;
+        // Se houver Exif SubIFD, ler Flash (0x9209) e DateTimeOriginal (0x9003)
+        if (exifSubIfdOffset > 0 && exifSubIfdOffset + 2 <= tiffData.Length)
+        {
+            ushort subEntries = isLE
+                ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice((int)exifSubIfdOffset, 2))
+                : BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice((int)exifSubIfdOffset, 2));
+
+            int subPos = (int)exifSubIfdOffset + 2;
+            for (int i = 0; i < subEntries && subPos + 12 <= tiffData.Length; i++, subPos += 12)
+            {
+                ushort tag = isLE
+                    ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice(subPos, 2))
+                    : BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice(subPos, 2));
+                uint count = isLE
+                    ? BinaryPrimitives.ReadUInt32LittleEndian(tiffData.Slice(subPos + 4, 4))
+                    : BinaryPrimitives.ReadUInt32BigEndian(tiffData.Slice(subPos + 4, 4));
+                uint valOffset = isLE
+                    ? BinaryPrimitives.ReadUInt32LittleEndian(tiffData.Slice(subPos + 8, 4))
+                    : BinaryPrimitives.ReadUInt32BigEndian(tiffData.Slice(subPos + 8, 4));
+
+                if (tag == 0x9209) // Flash
+                {
+                    ushort flashVal = isLE
+                        ? BinaryPrimitives.ReadUInt16LittleEndian(tiffData.Slice(subPos + 8, 2))
+                        : BinaryPrimitives.ReadUInt16BigEndian(tiffData.Slice(subPos + 8, 2));
+                    flashFired = (flashVal & 0x0001) != 0;
+                }
+                else if (tag == 0x9003 || tag == 0x0132) // DateTimeOriginal ou DateTime
+                {
+                    string? dtStr = ReadAsciiString(tiffData, valOffset, count);
+                    if (!string.IsNullOrEmpty(dtStr) && DateTime.TryParseExact(dtStr.Trim(), "yyyy:MM:dd HH:mm:ss", null, System.Globalization.DateTimeStyles.None, out var dt))
+                    {
+                        dateTaken = dt;
+                    }
+                }
+            }
+        }
+
+        return (orientation, model, make, flashFired, dateTaken);
+    }
+
+    private static string? ReadAsciiString(ReadOnlySpan<byte> data, uint offset, uint count)
+    {
+        if (count == 0 || offset >= data.Length) return null;
+        int len = (int)Math.Min(count, (uint)(data.Length - offset));
+        var strSpan = data.Slice((int)offset, len);
+        int nullIdx = strSpan.IndexOf((byte)0);
+        if (nullIdx >= 0) strSpan = strSpan[..nullIdx];
+        string result = Encoding.ASCII.GetString(strSpan).Trim();
+        return string.IsNullOrEmpty(result) ? null : result;
     }
 
     #endregion
