@@ -345,10 +345,10 @@ public class PhotoViewModel : INotifyPropertyChanged
         ? $"{(_model.ExposureBias.Value > 0 ? "+" : "")}{_model.ExposureBias.Value:0.#} EV"
         : "0.0 EV";
 
-    public string FormattedMeteringMode => !string.IsNullOrEmpty(_model.MeteringMode) ? _model.MeteringMode : "Padrão";
-    public string FormattedExposureProgram => !string.IsNullOrEmpty(_model.ExposureProgram) ? _model.ExposureProgram : "Automático";
-    public string FormattedExposureMode => !string.IsNullOrEmpty(_model.ExposureMode) ? _model.ExposureMode : "Automático";
-    public string FormattedWhiteBalance => !string.IsNullOrEmpty(_model.WhiteBalance) ? _model.WhiteBalance : "Automático";
+    public string FormattedMeteringMode => !string.IsNullOrEmpty(_model.MeteringMode) ? _model.MeteringMode : "-";
+    public string FormattedExposureProgram => !string.IsNullOrEmpty(_model.ExposureProgram) ? _model.ExposureProgram : "-";
+    public string FormattedExposureMode => !string.IsNullOrEmpty(_model.ExposureMode) ? _model.ExposureMode : "-";
+    public string FormattedWhiteBalance => !string.IsNullOrEmpty(_model.WhiteBalance) ? _model.WhiteBalance : "-";
     public string FormattedSoftware => !string.IsNullOrEmpty(_model.Software) ? _model.Software : "-";
     public string FormattedSerialNumber => !string.IsNullOrEmpty(_model.SerialNumber) ? _model.SerialNumber : "-";
 
@@ -380,7 +380,7 @@ public class PhotoViewModel : INotifyPropertyChanged
                 double mp = (_model.Width * (double)_model.Height) / 1_000_000.0;
                 return $"{_model.Width} × {_model.Height}  •  {mp:0.#} MP";
             }
-            return "Alta Resolução RAW";
+            return "Desconhecido";
         }
     }
 
@@ -392,11 +392,11 @@ public class PhotoViewModel : INotifyPropertyChanged
 
     public string FormattedDimensions => _model.Width > 0 && _model.Height > 0 
         ? $"{_model.Width} × {_model.Height} px" 
-        : "Alta Resolução RAW";
+        : "Desconhecido";
 
     public string FormattedDate => _model.DateTaken.HasValue 
         ? _model.DateTaken.Value.ToString("dd/MM/yyyy HH:mm:ss") 
-        : DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+        : "-";
 
     public double SharpnessScore => _model.SharpnessScore;
     public double BrightnessScore => _model.BrightnessScore;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -84,7 +84,7 @@ public class PredictivePrecacheService
                 {
                     if (!string.IsNullOrEmpty(item.ThumbnailCachePath) && System.IO.File.Exists(item.ThumbnailCachePath))
                     {
-                        var bmp = ImageHelper.LoadBitmapFromFile(item.ThumbnailCachePath, item.Orientation, decodePixelWidth: 1600);
+                        var bmp = ImageHelper.LoadBitmapFromFile(item.ThumbnailCachePath, item.Orientation, decodePixelWidth: 1920);
                         if (bmp != null)
                         {
                             Store(item.FilePath, bmp);

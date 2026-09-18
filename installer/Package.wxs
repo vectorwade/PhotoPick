@@ -1,4 +1,4 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="MaviSelect"
            Manufacturer="Mavi Studio"
            Version="1.0.0.0"
@@ -7,6 +7,10 @@
 
     <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do MaviSelect já está instalada." />
     <MediaTemplate EmbedCab="yes" />
+
+    <!-- UI de Instalação (EULA + Escolha de Diretório) -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="installer\License.rtf" />
 
     <!-- Ícone no Painel de Controle e no Menu Iniciar -->
     <Icon Id="AppIcon" SourceFile="PhotoPick.Desktop\app_icon.ico" />
