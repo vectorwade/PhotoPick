@@ -871,4 +871,55 @@ public partial class MainWindow : Window
         ResetLoupeZoom();
         ViewModel.NextPhoto();
     }
+
+    #region Licença e Ativação
+    
+    private void BtnLicenseInfo_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.OpenLicenseDialog();
+    }
+    
+    private void BtnLockCopyMachineId_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CopyMachineId();
+    }
+    
+    private void BtnLockActivate_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.TryActivateLicense();
+    }
+    
+    private void BtnLockExit_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsLicenseLocked)
+        {
+            ViewModel.ExitApplication();
+        }
+        else
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+    
+    private void BtnCloseLicense_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.CanDismissLicenseOverlay)
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+    
+    private void LicenseOverlayBackdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ViewModel.CanDismissLicenseOverlay)
+        {
+            ViewModel.CloseLicenseDialog();
+        }
+    }
+    
+    private void LicenseCard_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+    }
+    #endregion
 }

@@ -21,7 +21,12 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly CullingSession _session;
     private readonly IRawPreviewExtractor _extractor;
-    private readonly LightroomService _lightroomService;
+    private readonly PhotoPick.Core.Services.LightroomService _lightroomService;
+    private readonly PhotoPick.Core.Services.LicenseManager _licenseManager;
+    private PhotoPick.Core.Models.LicenseState _licenseState = new();
+    private bool _isLicenseDialogOpen;
+    private string _enteredLicenseKey = string.Empty;
+    private string _licenseErrorMessage = string.Empty;
     private readonly ThumbnailLoaderQueue _loaderQueue;
     private readonly PredictivePrecacheService _precacheService = new();
 
@@ -604,6 +609,148 @@ public class MainViewModel : INotifyPropertyChanged
     public int Star2Count => _session.RatingCount(2);
     public int Star1Count => _session.RatingCount(1);
 
+    
+    public PhotoPick.Core.Models.LicenseState LicenseState
+    {
+        get => _licenseState;
+        private set
+        {
+            _licenseState = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsLicenseLocked));
+            OnPropertyChanged(nameof(IsTrialExpired));
+            OnPropertyChanged(nameof(IsClockTampered));
+            OnPropertyChanged(nameof(TrialDaysRemaining));
+            OnPropertyChanged(nameof(MachineId));
+            OnPropertyChanged(nameof(IsLicenseOverlayVisible));
+            OnPropertyChanged(nameof(CanDismissLicenseOverlay));
+            OnPropertyChanged(nameof(LicenseLockTitle));
+            OnPropertyChanged(nameof(LicenseLockSubtitle));
+            OnPropertyChanged(nameof(LicenseExitButtonText));
+        }
+    }
+
+    public bool IsLicenseLocked => _licenseState.IsTrialExpired || _licenseState.IsTampered;
+    public bool IsTrialExpired => _licenseState.IsTrialExpired;
+    public bool IsClockTampered => _licenseState.IsTampered;
+    public int TrialDaysRemaining => _licenseState.DaysRemaining;
+    public string MachineId => _licenseState.MachineId;
+    public bool IsLicenseOverlayVisible => IsLicenseLocked || _isLicenseDialogOpen;
+    public bool CanDismissLicenseOverlay => !IsLicenseLocked;
+
+    public string LicenseLockTitle
+    {
+        get
+        {
+            if (IsClockTampered) return "Alteração de Data do Sistema Detectada";
+            if (IsTrialExpired) return "Período de Avaliação Encerrado";
+            if (_licenseState.IsActivated) return "Mavi Select — Licença Vitalícia Ativada";
+            return $"Mavi Select — Avaliação ({TrialDaysRemaining} dias restantes)";
+        }
+    }
+
+    public string LicenseLockSubtitle
+    {
+        get
+        {
+            if (IsClockTampered) return "O relógio do Windows foi retrocedido. Para continuar, insira sua chave vitalícia.";
+            if (IsTrialExpired) return "Seu período de teste de 15 dias expirou. Insira sua chave de ativação para desbloquear permanentemente.";
+            if (_licenseState.IsActivated) return "Sua cópia está ativada com sucesso.";
+            return $"Você está no período de avaliação gratuita ({TrialDaysRemaining} dia(s) restante(s)).";
+        }
+    }
+
+    public string LicenseExitButtonText => IsLicenseLocked ? "Sair do Aplicativo" : "Continuar Avaliação";
+
+    public string EnteredLicenseKey
+    {
+        get => _enteredLicenseKey;
+        set
+        {
+            if (_enteredLicenseKey != value)
+            {
+                _enteredLicenseKey = value;
+                OnPropertyChanged();
+                LicenseErrorMessage = string.Empty;
+            }
+        }
+    }
+
+    public string LicenseErrorMessage
+    {
+        get => _licenseErrorMessage;
+        set { _licenseErrorMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasLicenseError)); }
+    }
+
+    public bool HasLicenseError => !string.IsNullOrEmpty(_licenseErrorMessage);
+
+    public bool IsLicenseDialogOpen
+    {
+        get => _isLicenseDialogOpen;
+        set
+        {
+            _isLicenseDialogOpen = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsLicenseOverlayVisible));
+            OnPropertyChanged(nameof(CanDismissLicenseOverlay));
+            OnPropertyChanged(nameof(LicenseLockTitle));
+            OnPropertyChanged(nameof(LicenseLockSubtitle));
+            OnPropertyChanged(nameof(LicenseExitButtonText));
+        }
+    }
+
+    public void RefreshLicenseState()
+    {
+        LicenseState = _licenseManager.GetLicenseState();
+    }
+
+    public bool TryActivateLicense()
+    {
+        if (string.IsNullOrWhiteSpace(EnteredLicenseKey))
+        {
+            LicenseErrorMessage = "Por favor, digite ou cole sua chave de ativação.";
+            return false;
+        }
+
+        if (_licenseManager.Activate(EnteredLicenseKey))
+        {
+            LicenseErrorMessage = string.Empty;
+            RefreshLicenseState();
+            IsLicenseDialogOpen = false;
+            StatusMessage = "Mavi Select ativado com sucesso!";
+            System.Windows.MessageBox.Show("Mavi Select ativado com sucesso!", "Ativação Concluída", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            return true;
+        }
+        else
+        {
+            LicenseErrorMessage = "Chave inválida para este computador.";
+            return false;
+        }
+    }
+
+    public void CopyMachineId()
+    {
+        System.Windows.Clipboard.SetText(MachineId);
+        StatusMessage = "ID da Máquina copiado!";
+    }
+
+    public void OpenLicenseDialog()
+    {
+        LicenseErrorMessage = string.Empty;
+        EnteredLicenseKey = string.Empty;
+        IsLicenseDialogOpen = true;
+    }
+
+    public void CloseLicenseDialog()
+    {
+        IsLicenseDialogOpen = false;
+    }
+
+    public void ExitApplication()
+    {
+        System.Windows.Application.Current.Shutdown();
+    }
+
     public MainViewModel()
     {
         _extractor = new RawPreviewExtractor();
@@ -611,6 +758,10 @@ public class MainViewModel : INotifyPropertyChanged
         _lightroomService = new LightroomService();
         _loaderQueue = new ThumbnailLoaderQueue(_session, _extractor, _session.CacheService);
         _loaderQueue.Start();
+
+        
+        _licenseManager = new PhotoPick.Core.Services.LicenseManager();
+        RefreshLicenseState();
 
         _session.StatsChanged += RefreshStats;
     }
