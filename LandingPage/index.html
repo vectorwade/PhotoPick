@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mavi Select - Triagem de fotos na velocidade do pensamento</title>
+    <!-- Tailwind CSS (CDN para prototipagem rápida) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            bg: '#111111',
+                            panel: '#1E1E1E',
+                            border: '#333333',
+                            green: '#2ecc71',
+                            greenHover: '#27ae60',
+                            blue: '#31A8FF',
+                            lr: '#0D3859',
+                            lrHover: '#154B78',
+                            red: '#e74c3c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111111; color: #ffffff; }
+    </style>
+</head>
+<body class="antialiased selection:bg-app-green selection:text-white">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-[#111111]/90 backdrop-blur-md border-b border-app-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <img src="assets/app_icon.png" alt="Logo Mavi Select" class="w-9 h-9 object-contain" />
+                    <span class="font-bold text-xl tracking-tight">Mavi Select</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="text-gray-300 hover:text-white transition">Recursos</a>
+                    <a href="#como-funciona" class="text-gray-300 hover:text-white transition">Como Funciona</a>
+                </div>
+                <div>
+                    <button onclick="openDownloadModal()" class="bg-app-green text-black px-5 py-2.5 rounded-lg font-bold hover:bg-app-greenHover transition shadow-lg shadow-app-green/20">Baixar Agora</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center relative">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-app-green/5 rounded-full blur-[120px] -z-10"></div>
+        
+        <span class="text-app-green font-semibold tracking-wider uppercase text-sm mb-4 block">Feito por e para criadores</span>
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
+            Triagem de fotos <br/>
+            <span class="text-app-green">rápida e profissional!</span>
+        </h1>
+        <p class="mt-4 text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+            Processe arquivos RAW pesados sem engasgos. Selecione milhares de fotos instantaneamente e sincronize direto com o Lightroom Classic.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <button onclick="openDownloadModal()" class="bg-app-green text-black px-8 py-4 rounded-xl font-bold text-lg hover:bg-app-greenHover transition shadow-xl flex items-center justify-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Baixar Versão Windows
+            </button>
+            <a href="#como-funciona" class="bg-app-panel text-white border border-app-border px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition flex items-center justify-center gap-2">
+                Ver como funciona
+            </a>
+        </div>
+
+        <!-- Mockup do App -->
+        <div class="mt-16 mx-auto w-full max-w-5xl rounded-2xl overflow-hidden border border-app-border shadow-2xl shadow-black/50">
+            <img src="assets/grid_dark.png" alt="Interface principal do Mavi Select" class="w-full h-auto" />
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="py-24 bg-[#0A0A0B] border-y border-app-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Projetado para otimizar seu fluxo de trabalho</h2>
+                <p class="text-gray-400">Tudo o que você precisa para escolher as melhores fotos, sem distrações.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-16">
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 text-app-blue">Metadados Completos em Segundos</h3>
+                    <p class="text-gray-400 leading-relaxed mb-6">Inspecione Câmera, Lente, Exposição e Classificação instantaneamente. Nosso painel lateral e modal de EXIF detalhado garantem que você sempre saiba exatamente as configurações de cada clique.</p>
+                </div>
+                <div class="rounded-xl overflow-hidden border border-app-border shadow-lg">
+                    <img src="assets/modal_exif.png" alt="Informações de EXIF" class="w-full h-auto" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Card 1 -->
+                <div class="bg-app-panel p-8 rounded-2xl border border-app-border hover:border-gray-700 transition">
+                    <div class="w-12 h-12 bg-app-green/10 text-app-green rounded-xl flex items-center justify-center mb-6 text-2xl">⚡</div>
+                    <h3 class="text-xl font-bold mb-3">Performance Extrema</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Carregue arquivos RAW pesados de 40+ Megapixels de qualquer câmera sem engasgar sua RAM. O Mavi Select processa e dimensiona de forma inteligente.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-app-panel p-8 rounded-2xl border border-app-border hover:border-gray-700 transition">
+                    <div class="w-12 h-12 bg-app-blue/10 text-app-blue rounded-xl flex items-center justify-center mb-6 text-2xl">🔗</div>
+                    <h3 class="text-xl font-bold mb-3">Sincronia Lightroom</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Chega de duplicar arquivos. Um botão envia exatamente as fotos que você escolheu direto para o Adobe Lightroom Classic.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-app-panel p-8 rounded-2xl border border-app-border hover:border-gray-700 transition">
+                    <div class="w-12 h-12 bg-gray-500/10 text-gray-300 rounded-xl flex items-center justify-center mb-6 text-2xl">🌗</div>
+                    <h3 class="text-xl font-bold mb-3">Modo Claro e Escuro</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Adapte-se ao seu ambiente. Alterne instantaneamente entre o modo escuro imersivo ou um modo claro cristalino.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Como Funciona -->
+    <section id="como-funciona" class="py-24 bg-app-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl md:text-4xl font-bold mb-16 text-center">Fluxo de trabalho intuitivo</h2>
+            
+            <div class="flex flex-col md:flex-row gap-12 items-center">
+                <div class="flex-1 space-y-12">
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-app-green text-black flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <h4 class="text-xl font-bold mb-2">Selecione a Pasta</h4>
+                            <p class="text-gray-400">Com nossa interface de início rápido, basta clicar em "Selecionar Pasta" e o carregamento das miniaturas é instantâneo.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-app-green text-black flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <h4 class="text-xl font-bold mb-2">Triagem (P / X / D)</h4>
+                            <p class="text-gray-400">Identificação visual imediata: Verde (Escolhida), Vermelho (Rejeitada), Amarelo (Dúvida) e contorno Azul para a foto ativa.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-app-lr text-app-blue border border-app-blue flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <h4 class="text-xl font-bold mb-2">Sincronize com Lr</h4>
+                            <p class="text-gray-400">Clique em "Lr Sincronizar". As fotos selecionadas são enviadas magicamente para o Lightroom Classic.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 w-full relative">
+                    <img src="assets/modal_start.png" alt="Início rápido" class="rounded-xl border border-app-border shadow-2xl relative z-10 w-3/4 ml-auto" />
+                    <img src="assets/grid_light.png" alt="Modo Claro" class="rounded-xl border border-app-border shadow-2xl absolute top-1/3 right-1/3 -z-10 w-full opacity-60" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download CTA -->
+    <section id="download" class="py-24 bg-gradient-to-b from-app-bg to-[#060608] border-t border-app-border">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-4xl font-extrabold mb-6">Pronto para acelerar seu fluxo?</h2>
+            <p class="text-xl text-gray-400 mb-10">Mavi Select é a ferramenta que faltava entre o seu cartão de memória e o seu editor.</p>
+            
+            <button onclick="openDownloadModal()" class="inline-flex items-center gap-3 bg-app-green text-black px-10 py-5 rounded-2xl font-bold text-xl hover:scale-105 transition duration-300 shadow-2xl shadow-app-green/20">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.949-1.801"/></svg>
+                Baixar para Windows
+            </button>
+        </div>
+    </section>
+
+    <!-- Feedback Section -->
+    <section id="feedback" class="py-24 bg-[#0A0A0B] border-t border-app-border">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold mb-4">Deixe seu Feedback</h2>
+            <p class="text-gray-400 mb-8">Testou o Mavi Select? Conta pra gente o que achou, o que pode melhorar ou se encontrou algum problema.</p>
+            
+            <form id="feedback-form" action="https://formspree.io/f/mrpbepbe" method="POST" class="text-left space-y-4 max-w-xl mx-auto bg-[#111111] p-8 rounded-2xl border border-app-border shadow-xl">
+                <input type="hidden" name="_subject" value="Novo Feedback do Mavi Select!" />
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1" for="fb-name">Nome</label>
+                    <input type="text" id="fb-name" name="name" required class="w-full bg-[#1A1A1A] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-app-green focus:ring-1 focus:ring-app-green" placeholder="Seu nome">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1" for="fb-email">E-mail (opcional)</label>
+                    <input type="email" id="fb-email" name="email" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-app-green focus:ring-1 focus:ring-app-green" placeholder="Para podermos te responder">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1" for="fb-message">Mensagem</label>
+                    <textarea id="fb-message" name="message" rows="4" required class="w-full bg-[#1A1A1A] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-app-green focus:ring-1 focus:ring-app-green resize-none" placeholder="O que você achou do Mavi Select?"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-app-blue text-white font-bold text-lg py-3 rounded-lg hover:bg-blue-600 transition shadow-lg mt-2">
+                    Enviar Feedback
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#050506] border-t border-app-border py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <img src="assets/app_icon.png" alt="Logo" class="w-6 h-6 object-contain" />
+                <span class="font-semibold text-gray-300">Mavi Select</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                &copy; 2026 Mavi Studio. Todos os direitos reservados.
+            </div>
+            <div class="flex gap-6 text-sm text-gray-400">
+                <a href="#" class="hover:text-white">Suporte</a>
+                <a href="#" class="hover:text-white">Termos de Uso</a>
+                <a href="#" class="hover:text-white">Privacidade</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal de Download -->
+    <div id="download-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity">
+        <div class="bg-app-panel border border-app-border rounded-2xl p-8 max-w-md w-full shadow-2xl relative">
+            <button onclick="closeDownloadModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-app-green/10 text-app-green rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-2">Baixe o Mavi Select</h3>
+                <p class="text-gray-400 text-sm">Insira seu nome e e-mail para liberar o download grátis.</p>
+            </div>
+            <form id="lead-form" onsubmit="handleDownload(event)" class="space-y-4">
+                <input type="hidden" name="_subject" value="Novo Lead: Download do Mavi Select!" />
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1" for="name">Nome completo</label>
+                    <input type="text" id="name" name="name" required class="w-full bg-[#111111] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-app-green focus:ring-1 focus:ring-app-green" placeholder="Como devemos te chamar?">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1" for="email">E-mail</label>
+                    <input type="email" id="email" name="email" required class="w-full bg-[#111111] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-app-green focus:ring-1 focus:ring-app-green" placeholder="seu@email.com">
+                </div>
+                <button type="submit" class="w-full bg-app-green text-black font-bold text-lg py-3 rounded-lg hover:bg-app-greenHover transition shadow-lg mt-2">
+                    Liberar Download Agora
+                </button>
+            </form>
+            <p class="text-xs text-gray-500 text-center mt-4">Nós respeitamos sua privacidade. Zero spam.</p>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('download-modal');
+
+        function openDownloadModal() {
+            modal.classList.remove('hidden');
+        }
+
+        function closeDownloadModal() {
+            modal.classList.add('hidden');
+        }
+
+        // Fecha o modal ao clicar fora dele
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeDownloadModal();
+            }
+        });
+
+        function handleDownload(e) {
+            e.preventDefault();
+            
+            // Pega os dados do formulário
+            const form = document.getElementById('lead-form');
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            // 1. Envia os dados para o Formspree silenciosamente
+            fetch('https://formspree.io/f/mrpbepbe', {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).catch(error => console.error("Erro ao enviar lead:", error));
+
+            // 2. Inicia o download do arquivo automaticamente
+            const link = document.createElement('a');
+            link.href = 'downloads/MaviSelect_Setup.msi';
+            link.download = 'MaviSelect_Setup.msi';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // 3. Fecha o modal e agradece
+            closeDownloadModal();
+            alert(`Obrigado, ${name}! Seu download começará em instantes.`);
+            form.reset();
+        }
+    </script>
+</body>
+</html>
