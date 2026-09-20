@@ -1691,12 +1691,12 @@
                                 <TextBlock Grid.Column="0" Text="📁" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0"/>
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Criar Pasta '_SELECIONADAS_LIGHTROOM' e Abrir" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF"/>
+                                        <TextBlock Text="Isolar Selecionadas (Via Hard Links)" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF"/>
                                         <Border Background="#252525" CornerRadius="3" Padding="5,1" Margin="10,0,0,0">
-                                            <TextBlock Text="ISOLAR ARQUIVOS" FontSize="9" FontWeight="Bold" Foreground="#888888"/>
+                                            <TextBlock Text="INSTANTÂNEO &amp; ZERO DISCO" FontSize="9" FontWeight="Bold" Foreground="#888888"/>
                                         </Border>
                                     </StackPanel>
-                                    <TextBlock Text="Copia exclusivamente as fotos escolhidas e seus metadados .xmp para uma subpasta separada. O Lightroom abre mostrando apenas as fotos selecionadas na importação (zero fotos rejeitadas)."
+                                    <TextBlock Text="Cria um espelho instantâneo das fotos escolhidas e seus metadados .xmp para uma subpasta separada. O Lightroom abre mostrando apenas as fotos selecionadas na importação (zero fotos rejeitadas)."
                                                Foreground="#AAAAAA" FontSize="11.5" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Grid>

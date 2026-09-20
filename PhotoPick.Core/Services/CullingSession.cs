@@ -32,6 +32,29 @@ public enum PhotoFilterMode
 
 public class CullingSession
 {
+
+    [System.Runtime.InteropServices.DllImport("Kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)]
+    private static extern bool CreateHardLink(string lpFileName, string lpExistingFileName, nint lpSecurityAttributes);
+
+    private static void CreateHardLinkOrCopy(string sourceFileName, string destFileName)
+    {
+        try
+        {
+            if (File.Exists(destFileName))
+                File.Delete(destFileName);
+
+            bool success = CreateHardLink(destFileName, sourceFileName, 0);
+            if (!success)
+            {
+                File.Copy(sourceFileName, destFileName, true);
+            }
+        }
+        catch
+        {
+            File.Copy(sourceFileName, destFileName, true);
+        }
+    }
+
     private readonly IRawPreviewExtractor _extractor;
     private readonly IXmpService _xmpService;
     private readonly IThumbnailCacheService _cacheService;
@@ -346,13 +369,13 @@ public class CullingSession
                 ct.ThrowIfCancellationRequested();
 
                 string destPhoto = Path.Combine(destinationFolder, photo.FileName);
-                File.Copy(photo.FilePath, destPhoto, overwrite: true);
+                CreateHardLinkOrCopy(photo.FilePath, destPhoto);
 
                 string xmpSource = photo.XmpPath;
                 if (File.Exists(xmpSource))
                 {
                     string destXmp = Path.Combine(destinationFolder, Path.GetFileName(xmpSource));
-                    File.Copy(xmpSource, destXmp, overwrite: true);
+                    CreateHardLinkOrCopy(xmpSource, destXmp);
                 }
 
                 copied++;
